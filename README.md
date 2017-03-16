@@ -8,21 +8,21 @@ Deploying Machine Learning models is difficult, and involves a mix of handling m
 
 ```python
 @register_model(
-	registered_name='foobar', 
-	version='0.1.0-alpha',
+    registered_name='foobar', 
+    version='0.1.0-alpha',
     version_constraints='>=0.1.0,<0.2.0'
 )
 class FooBar(ManagedObject):
-	def __init__(self, big_object):
-		super(ManagedObject, self).__init__()
-		self._big_object = big_object
-	
-	def _save(self, fileobject):
-		pickle.dump(self, fileobject)
+    def __init__(self, big_object):
+        super(ManagedObject, self).__init__()
+        self._big_object = big_object
+    
+    def _save(self, fileobject):
+        pickle.dump(self, fileobject)
 
-	@classmethod
-	def _load(cls, fileobject):
-		return pickle.load(fileobject)
+    @classmethod
+    def _load(cls, fileobject):
+        return pickle.load(fileobject)
 ```
 
 
