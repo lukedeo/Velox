@@ -1,7 +1,6 @@
-# Vēlōx
-
 <img src="img/logo.png" width="200">
 
+# Vēlōx
 
 Welcome to Vēlōx! 
 
