@@ -1,4 +1,6 @@
-# Vēlōx ![logo](img/logo.png)
+# Vēlōx
+
+![logo](img/logo.png | width=100)
 
 
 Welcome to Vēlōx! 
