@@ -10,6 +10,7 @@ from abc import ABCMeta, abstractmethod
 import cPickle as pickle
 import fnmatch
 from glob import glob
+import inspect
 import logging
 import os
 import tempfile
@@ -18,48 +19,23 @@ from apscheduler.schedulers.background import BackgroundScheduler
 import boto3
 from semantic_version import Version as SemVer, Spec as Specification
 
-from .tools import (abstractclassmethod, timestamp, safe_mkdir,
-                    enforce_return_type, is_s3_path, parse_s3, threaded)
+from .tools import (abstractclassmethod, timestamp, threaded, sha,
+                    zero_reload_downtime)
+
+from .filesystem import (find_matching_files, ensure_exists,
+                         get_aware_filepath,
+                         stitch_filename)
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_PREFIX = os.environ.get('VELOX_ROOT')
-SESSION = boto3.Session()
-S3 = SESSION.resource('s3')
 
-DEFAULT_PROTOCOL = ''
-
-if DEFAULT_PREFIX is None:
-    DEFAULT_PREFIX = os.path.join(os.environ.get('HOME'), '.heimdall', 'models')
-    logger.info('environment variable VELOX_ROOT not set. '
-                'Falling back to {}'.format(DEFAULT_PREFIX))
-
-
-if not is_s3_path(DEFAULT_PREFIX):
-    logger.info('Default prefix will be built on local file system')
-
-    logger.debug('Safely ensuring {} exists.'.format(DEFAULT_PREFIX))
-    safe_mkdir(DEFAULT_PREFIX)
-else:
-    logger.info('Default prefix will be on S3')
-    bucket, key = parse_s3(DEFAULT_PREFIX)
-    logger.info('S3 bucket = {}'.format(bucket))
-    logger.info('S3 key = {}'.format(key))
-
-    DEFAULT_PREFIX = '/'.join((bucket, key))
-
-    DEFAULT_PROTOCOL = 's3://'
-
-    if bucket in (_.name for _ in S3.buckets.iterator()):
-        logger.debug('bucket already exists')
-    else:
-        logger.warn('bucket does not exist. Creating it...')
-        S3.create_bucket(
-            Bucket=bucket,
-            CreateBucketConfiguration={
-                'LocationConstraint': SESSION.region_name
-            }
-        )
+def _default_prefix():
+    vroot = os.environ.get('VELOX_ROOT')
+    if vroot is None:
+        vroot = os.path.abspath('.')
+        logger.warning('falling back to {}, as no directory specified in '
+                       'VELOX_ROOT'.format(vroot))
+    return vroot
 
 
 class VeloxCreationError(Exception):
@@ -89,6 +65,8 @@ class ManagedObject(object):
         self._scheduler = BackgroundScheduler()
         self._job_pointer = None
 
+        self._current_sha = None
+
     def __del__(self):
         if self._scheduler.state:
             self._scheduler.shutdown()
@@ -100,11 +78,23 @@ class ManagedObject(object):
         # capture what is normally pickled
         state = self.__dict__.copy()
         del state['_scheduler']
+        del state['_current_sha']
         return state
 
     def __setstate__(self, newstate):
         newstate['_scheduler'] = BackgroundScheduler()
+        newstate['_current_sha'] = None
         self.__dict__.update(newstate)
+
+    @property
+    def current_sha(self):
+        return self._current_sha
+
+    @current_sha.setter
+    def current_sha(self, value):
+        if self._current_sha is not None:
+            raise ValueError('Cannot set a sha unless previous sha was None')
+        self._current_sha = value
 
     @property
     def _needs_increment(self):
@@ -122,13 +112,15 @@ class ManagedObject(object):
 
     @abstractmethod
     def _save(self, fileobject):
-        raise NotImplementedError(
-            'Relying on super-class serialization not allowed')
+        raise NotImplementedError('super-class serialization not allowed')
+
+    @abstractmethod
+    def __call__(self, *args, **kwargs):
+        raise NotImplementedError('super-class __call__ not allowed')
 
     @abstractclassmethod
     def _load(cls, fileobject):
-        raise NotImplementedError(
-            'Relying on super-class de-serialization not allowed')
+        raise NotImplementedError('super-class de-serialization not allowed')
 
     def save(self, prefix=None):
         outpath = self.savepath(prefix=prefix)
@@ -138,33 +130,61 @@ class ManagedObject(object):
         return outpath
 
     @classmethod
-    def load(cls, prefix=None, specifier=None):
+    def load(cls, prefix=None, specifier=None, skip_sha=None):
         filepath = cls.loadpath(prefix=prefix, specifier=specifier)
+        filesha = sha(get_filename(filepath))
+
+        if skip_sha == filesha:
+            raise VeloxConstraintError('found sha: {} when sha was explicitly '
+                                       'blacklisted'.format(skip_sha))
         logger.debug('retrieving from filepath: {}'.format(filepath))
         with get_aware_filepath(filepath, 'rb') as fileobject:
-            return cls._load(fileobject)
+            obj = cls._load(fileobject)
+            obj.current_sha = filesha
+            return obj
 
     def _increment(self):
         replacement = self.__replacement.result()
-        current_scheduler = self._scheduler
-        current_job_pointer = self._job_pointer
-        self.__dict__.update(replacement.__dict__)
 
-        self._scheduler = current_scheduler
-        self._job_pointer = current_job_pointer
+        if self._current_sha != replacement.current_sha:
+            # current_scheduler = self._scheduler
+            # current_job_pointer = self._job_pointer
+            # self.__dict__.update(replacement.__dict__)
+
+            logger.debug('will aspire to new version')
+            logger.debug('current sha: {}'.format(self._current_sha))
+            logger.debug('    new sha: {}'.format(replacement.current_sha))
+
+            for k, v in replacement.__dict__.iteritems():
+                if (k not in {'_scheduler', '_job_pointer'}) and (not k.startswith('__')):
+                    self.__dict__[k] = v
+        else:
+            logger.debug('found matching sha: {}'.format(self._current_sha))
+            logger.debug('will skip increment'.format(self._current_sha))
+
+            # self._scheduler = current_scheduler
+            # self._job_pointer = current_job_pointer
 
         self.__incr_underway = False
         self.__replacement = None
 
     @threaded
     def __load_async(self, prefix, specifier):
-        return self.__class__.load(prefix, specifier)
+        newobj = self.__class__.load(prefix, specifier,
+                                     skip_sha=self.current_sha)
+        self.__incr_underway = False
+        return newobj
 
     def __reload(self, prefix, specifier):
         self.__incr_underway = True
-        self.__replacement = self.__load_async(prefix, specifier)
+        try:
+            self.__replacement = self.__load_async(prefix, specifier)
+            self._increment()
+        except VeloxConstraintError, ve:
+            logger.debug('reload skipped. message: {}'.format(ve.args[0]))
 
-    def reload(self, prefix=None, specifier=None, scheduled=False, **interval_trigger_args):
+    def reload(self, prefix=None, specifier=None, scheduled=False,
+               **interval_trigger_args):
 
         if scheduled:
             if not self._scheduler.state:
@@ -182,7 +202,6 @@ class ManagedObject(object):
                 max_instances=1,
                 **interval_trigger_args
             )
-
             logger.debug('launched job {}: {}'.format(
                 self._job_pointer.id, self._job_pointer))
 
@@ -191,12 +210,8 @@ class ManagedObject(object):
             self.__reload(prefix, specifier)
 
     def cancel_scheduled_reload(self):
-        if self._job_pointer is not None:
-            logger.info('removing job: {}'.format(self._job_pointer.id))
-            self._job_pointer.remove()
-            self._job_pointer = None
-        else:
-            logger.warning('no active reload jobs found')
+        self._scheduler.remove_all_jobs()
+        self._job_pointer = None
 
     def _register_name(self, name):
         self.__registered_name = name
@@ -209,54 +224,43 @@ class ManagedObject(object):
             raise VeloxCreationError('Usage of unregistered model')
 
     def formatted_filename(self):
-        return '{timestamp}_{name}.plx'.format(
+        return '{timestamp}_{name}.vx'.format(
             timestamp=timestamp(), name=self.registered_name)
 
     def savepath(self, prefix=None):
         if prefix is None:
+            prefix = _default_prefix()
             logger.debug('No prefix specified. Falling back to '
-                         'default at: {}'.format(DEFAULT_PREFIX))
+                         'default at: {}'.format(prefix))
 
-            return DEFAULT_PROTOCOL + os.path.join(
-                DEFAULT_PREFIX, self.formatted_filename()
-            )
+        ensure_exists(prefix)
 
         logger.debug('Prefix specified at: {}'.format(prefix))
 
-        return os.path.join(prefix, self.formatted_filename())
+        return stitch_filename(prefix, self.formatted_filename())
 
     @classmethod
     def loadpath(cls, prefix=None, specifier=None, handle_download=True):
 
         # will be {s3://}path/to/thing
 
-        prefix = DEFAULT_PROTOCOL + \
-            (DEFAULT_PREFIX if prefix is None else prefix)
+        if prefix is None:
+            prefix = _default_prefix()
+            logger.debug('No prefix specified. Falling back to '
+                         'default at: {}'.format(prefix))
 
         v = SemVer(cls.__registered_name.split('_')[-1][1:])
         sortkey = cls.__registered_name.replace(str(v), '*')
 
-        specifier = ('*{}'.format(specifier) if specifier is not None else '') + \
-            '*_{sortkey}.plx'.format(
-                sortkey=sortkey)
-
-        logger.info('Searching for matching file in {} with specifier {}'.format(
-            prefix, specifier))
-
-        if not is_s3_path(prefix):
-            logger.debug('globbing on local filesystem')
-
-            filelist = sorted(glob(os.path.join(prefix, specifier)))[::-1]
+        if specifier is None:
+            specifier = '*_{}.vx'.format(sortkey)
         else:
-            bucket, key = parse_s3(prefix)
+            specifier = '*{}*_{}.vx'.format(specifier, sortkey)
 
-            logger.debug('searching in bucket s3://{} with '
-                         'pfx key = {}'.format(bucket, key))
+        logger.info('Searching for matching file in {} with specifier {}'
+                    .format(prefix, specifier))
 
-            filelist = sorted([
-                obj.key for obj in S3.Bucket(bucket).objects.filter(Prefix=key)
-                if fnmatch.fnmatch(os.path.split(obj.key)[-1], specifier)
-            ])[::-1]
+        filelist = find_matching_files(prefix, specifier)
 
         if not filelist:
             raise VeloxConstraintError(
@@ -270,6 +274,7 @@ class ManagedObject(object):
 
             version_identifiers = map(get_semver, filelist)
             best_match = cls._version_spec.select(version_identifiers)
+            logger.debug('found version to aspire to: {}'.format(best_match))
             if best_match is None:
                 raise VeloxConstraintError(
                     'No files matching version requirements {} were '
@@ -287,19 +292,7 @@ class ManagedObject(object):
 
         logger.info('will load from {}'.format(filelist[0]))
 
-        if is_s3_path(prefix):
-            if handle_download:
-                _, temp_fp = tempfile.mkstemp(
-                    suffix='.plx', prefix='s3_tmp', text=False)
-                logger.debug('tranfering from '
-                             's3://{bucket}/{key} => {dest}'.format(
-                                 bucket=bucket, key=filelist[0], dest=temp_fp
-                             ))
-                S3.Bucket(bucket).download_file(filelist[0], temp_fp)
-                return temp_fp
-            return 's3://{bucket}/{key}'.format(bucket=bucket, key=filelist[0])
-
-        return filelist[0]
+        return stitch_filename(prefix, filelist[0])
 
 
 class register_model(object):
@@ -326,13 +319,33 @@ class register_model(object):
             self.version_specification = None
 
     def __call__(self, cls):
-        if hasattr(cls, ' ManagedObject__registered_name'):
+        if hasattr(cls, '_ManagedObject__registered_name'):
             raise VeloxCreationError('Class already registered!')
-        setattr(cls, ' ManagedObject__registered_name',
+        setattr(cls, '_ManagedObject__registered_name',
                 self.registered_name)
 
         setattr(cls, '_version_spec',
                 self.version_specification)
+
+        reserved_attr = {
+            'save',
+            'reload',
+            'cancel_scheduled_reload',
+            'formatted_filename',
+            'savepath'
+        }
+
+        for attr in cls.__dict__:
+            ok = callable(getattr(cls, attr)) and \
+                inspect.getargspec(getattr(cls, attr)).args[0] == 'self' and \
+                not attr.startswith('_') and \
+                attr not in reserved_attr
+
+            if ok or (attr == '__call__'):
+
+                print 'AYOOOO', attr
+
+                setattr(cls, attr, zero_reload_downtime(getattr(cls, attr)))
 
         return cls
 
@@ -341,8 +354,12 @@ def get_prefix(filepath):
     return os.path.split(filepath)[0]
 
 
+def get_filename(filepath):
+    return os.path.splitext(os.path.split(filepath)[-1])[0]
+
+
 def _get_naming_info(filepath):
-    return os.path.splitext(os.path.split(filepath)[-1])[0].split('_')
+    return get_filename(filepath).split('_')
 
 
 def get_registration_name(filepath):

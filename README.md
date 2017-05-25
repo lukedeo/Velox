@@ -1,9 +1,11 @@
-# vēlōx
+# Vēlōx
+
+![logo](img/logo.png)
 
 
-Welcome to vēlōx! 
+Welcome to Vēlōx! 
 
-Deploying Machine Learning models is difficult, and involves a mix of handling model versioning, hot-swapping new versions and determining version constraint satisfaction on-the-fly, and managing binary file movement either on a file system or with a cloud storage system like S3. Vēlōx can handle this for you with a series of simple base classes enforcing opinionated methods of handling the above problems. 
+Deploying and managing live machine learning models is difficult. It involves a mix of handling model versioning, hot-swapping new versions and determining version constraint satisfaction on-the-fly, and managing binary file movement either on a networked or local file system or with a cloud storage system like S3. Vēlōx can handle this for you with a series of simple base classes enforcing opinionated methods of handling the above problems. 
 
 
 ```python
