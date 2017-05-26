@@ -53,7 +53,7 @@ class VeloxConstraintError(Exception):
     pass
 
 
-class ManagedObject(object):
+class VeloxObject(object):
     __metaclass__ = ABCMeta
 
     # we dont want duplication of model names!
@@ -64,7 +64,6 @@ class ManagedObject(object):
         self.__replacement = None
         self._scheduler = BackgroundScheduler()
         self._job_pointer = None
-
         self._current_sha = None
 
     def __del__(self):
@@ -114,10 +113,6 @@ class ManagedObject(object):
     def _save(self, fileobject):
         raise NotImplementedError('super-class serialization not allowed')
 
-    @abstractmethod
-    def __call__(self, *args, **kwargs):
-        raise NotImplementedError('super-class __call__ not allowed')
-
     @abstractclassmethod
     def _load(cls, fileobject):
         raise NotImplementedError('super-class de-serialization not allowed')
@@ -156,14 +151,12 @@ class ManagedObject(object):
             logger.debug('    new sha: {}'.format(replacement.current_sha))
 
             for k, v in replacement.__dict__.iteritems():
-                if (k not in {'_scheduler', '_job_pointer'}) and (not k.startswith('__')):
+                if (k not in {'_scheduler', '_job_pointer'}) and \
+                        (not k.startswith('__')):
                     self.__dict__[k] = v
         else:
             logger.debug('found matching sha: {}'.format(self._current_sha))
             logger.debug('will skip increment'.format(self._current_sha))
-
-            # self._scheduler = current_scheduler
-            # self._job_pointer = current_job_pointer
 
         self.__incr_underway = False
         self.__replacement = None
@@ -304,10 +297,10 @@ class register_model(object):
         except ValueError:
             raise ValueError('Invalid SemVer string: {}'.format(version))
 
-        if registered_name in ManagedObject._registered_object_names:
+        if registered_name in VeloxObject._registered_object_names:
             raise VeloxCreationError(
                 'Already a registered class named {}'.format(registered_name))
-        ManagedObject._registered_object_names.append(registered_name)
+        VeloxObject._registered_object_names.append(registered_name)
         self.registered_name = registered_name
 
         if version_constraints is not None:
@@ -319,9 +312,9 @@ class register_model(object):
             self.version_specification = None
 
     def __call__(self, cls):
-        if hasattr(cls, '_ManagedObject__registered_name'):
+        if hasattr(cls, '_VeloxObject__registered_name'):
             raise VeloxCreationError('Class already registered!')
-        setattr(cls, '_ManagedObject__registered_name',
+        setattr(cls, '_VeloxObject__registered_name',
                 self.registered_name)
 
         setattr(cls, '_version_spec',
@@ -342,9 +335,6 @@ class register_model(object):
                 attr not in reserved_attr
 
             if ok or (attr == '__call__'):
-
-                print 'AYOOOO', attr
-
                 setattr(cls, attr, zero_reload_downtime(getattr(cls, attr)))
 
         return cls
@@ -375,4 +365,4 @@ def get_semver(filepath):
 
 
 def available_models():
-    return ManagedObject._registered_object_name
+    return VeloxObject._registered_object_name

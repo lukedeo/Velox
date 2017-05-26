@@ -23,7 +23,7 @@ logger = logging.getLogger(__name__)
 
 def sha(s):
     """
-    get a potentially value-inconsistent SHA of a python object.
+    get a simple, potentially value-inconsistent SHA of a python object.
     """
     m = md5()
     if isinstance(s, basestring):
@@ -126,13 +126,6 @@ def zero_reload_downtime(fn):
 
     @wraps(fn)
     def _respect_reload(cls, *args, **kw):
-        print 'OBJECT ZERO DOWNTIME', cls
-        print '=' * 60
-        print cls.__dict__
-        print '=' * 60
-        # print 'RESPECTTTT'
-        # if not cls._increment_underway:
-        #     return fn(cls, *args, **kw)
         if cls._needs_increment:
             logger.info('model version increment needed')
             cls._increment()
