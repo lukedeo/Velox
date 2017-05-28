@@ -60,6 +60,13 @@ class VeloxObject(object):
     _registered_object_names = []
 
     def __init__(self):
+        if not hasattr(self, '_registered_spec'):
+            raise VeloxCreationError(
+                'Managed Velox object instantiation failed due to missing '
+                'registration decorator. The definition of all VeloxObject '
+                'subclasses must be surrounded by the `register_model` '
+                'decorator. Please consult the documentation for more details.'
+            )
         self.__incr_underway = False
         self.__replacement = None
         self._scheduler = BackgroundScheduler()
@@ -319,6 +326,8 @@ class register_model(object):
 
         setattr(cls, '_version_spec',
                 self.version_specification)
+
+        setattr(cls, '_registered_spec', True)
 
         reserved_attr = {
             'save',
