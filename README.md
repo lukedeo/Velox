@@ -1,5 +1,3 @@
-# Velox
-
 <img src="img/logo.png" width="100">
 
 **Welcome to `velox!`**
