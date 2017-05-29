@@ -1,0 +1,23 @@
+sudo: required
+dist: trusty
+language: python
+cache: pip
+matrix:
+    include:
+        - python: 2.7
+        # - python: 3.4
+        # - python: 3.5
+        # - python: 3.6
+before_install:
+  - sudo apt-get update
+install:
+  - export BASE_DIR=$(pwd)
+  - echo $(python --version)
+  - pip install -e .[tests]
+  - cd $BASE_DIR
+# command to run tests
+script:
+  - PYTHONPATH=$(pwd) py.test --pep8 -m pep8
+  - PYTHONPATH=$(pwd) py.test test/
+after_success:
+  - coveralls

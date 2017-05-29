@@ -3,7 +3,7 @@
 """
 file: setup.py
 description: setuptools for Velox
-author: Luke de Oliveira (lukedeo@ldo.io)
+author: Luke de Oliveira (lukedeo@manifold.ai)
 """
 
 import os
@@ -16,20 +16,26 @@ setup(
     version='0.1.0',
     description=('Batteries-included tooling for handling promotion, '
                  'versioning, and zero-downtime requirments of Machine '
-                 'Learning models'),
+                 'Learning models in production.'),
     author='Luke de Oliveira',
     author_email='lukedeo@ldo.io',
     url='https://github.com/lukedeo/Velox',
     license='Apache 2.0',
     install_requires=['apscheduler', 'boto3', 'semantic_version', 'futures'],
     packages=find_packages(),
-    keywords=' '.join(('Machine Learning', 'TensorFlow',
-                       'Deployment', 'Versioning', 'Keras', 'AWS')),
+    keywords=('Machine-Learning TensorFlow Deployment Versioning Keras '
+              'AWS Deep Learning'),
     classifiers=[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python :: 2',
         'Programming Language :: Python :: 2.7'
-    ]
+    ],
+    extras_require={
+        'aws': ['boto3'],
+        'tests': ['numpy', 'pytest', 'pytest-cov', 'pytest-pep8',
+                  'pytest-xdist', 'python-coveralls', 'moto', 'keras[h5py]',
+                  'backports.tempfile', 'scikit-learn', 'mock', 'tensorflow']
+    }
 )
