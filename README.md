@@ -1,13 +1,21 @@
 <img src="img/logo.png" width="100">
 
-**Welcome to `velox!`**
+**Welcome to Velox!**
 
-Deploying and managing live machine learning models is difficult. It involves a mix of handling model versioning, hot-swapping new versions and determining version constraint satisfaction on-the-fly, and managing binary file movement either on a networked or local file system or with a cloud storage system like S3. `velox` can handle this for you with a simple base class enforcing opinionated methods of handling the above problems. 
+Deploying and managing live machine learning models is difficult. It involves a mix of handling model versioning, hot-swapping new versions and determining version constraint satisfaction on-the-fly, and managing binary file movement either on a networked or local file system or with a cloud storage system like S3. Velox can handle this for you with a simple base class enforcing opinionated methods of handling the above problems. 
 
 Velox provides two main utilities:
 
 * Velox abstracts the messiness of consistent naming schemes and handling saving and loading requirements for a filesystem and for other forms of storage.
 * Velox allows the ability to do a model / blob hotswap in-place for a new binary version.
+
+## Requirements
+
+Velox currently only supports Python 2.7, but **we would love contributions towards Python 3 support** 😁
+
+The main requirements are `apscheduler` for scheduling hot-swaps, `semantic_version` for version sanity, and the `futures` Python 2.7 backport. If you want to be able to work with S3, you'll need `boto3` (and a valid and properly set up AWS account).
+
+To run the tests, you'll need the brilliant `moto` library, the `backports.tempfile` library for Python 2.7 compatibility, and `Keras` and `sckit-learn`.
 
 ## `VeloxObject` ABC 
 
@@ -41,5 +49,6 @@ class FooBar(VeloxObject):
     def predict(self, X):
         return self._big_object.predict(X)
 ```
+
 
 

@@ -11,13 +11,9 @@ import datetime
 from errno import EEXIST
 import fnmatch
 from glob import glob
-from hashlib import md5
 import logging
 import os
 from tempfile import mkstemp
-from threading import Thread
-
-from concurrent.futures import Future
 
 
 logger = logging.getLogger(__name__)
