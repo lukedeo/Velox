@@ -7,24 +7,21 @@ author: Luke de Oliveira (lukedeo@ldo.io)
 """
 
 from abc import ABCMeta, abstractmethod
-import cPickle as pickle
-import fnmatch
-from glob import glob
 import inspect
 import logging
 import os
-import tempfile
 
 from apscheduler.schedulers.background import BackgroundScheduler
-import boto3
 from semantic_version import Version as SemVer, Spec as Specification
+
+
+from .exceptions import VeloxCreationError, VeloxConstraintError
+
+from .filesystem import (find_matching_files, ensure_exists, stitch_filename,
+                         get_aware_filepath)
 
 from .tools import (abstractclassmethod, timestamp, threaded, sha,
                     zero_reload_downtime)
-
-from .filesystem import (find_matching_files, ensure_exists,
-                         get_aware_filepath,
-                         stitch_filename)
 
 logger = logging.getLogger(__name__)
 
@@ -36,21 +33,6 @@ def _default_prefix():
         logger.warning('falling back to {}, as no directory specified in '
                        'VELOX_ROOT'.format(vroot))
     return vroot
-
-
-class VeloxCreationError(Exception):
-    """
-    Raised in the event of a class instantiation that does not follow
-    protocol.
-    """
-    pass
-
-
-class VeloxConstraintError(Exception):
-    """
-    Raised in the event of no matches for loading a model
-    """
-    pass
 
 
 class VeloxObject(object):
@@ -127,34 +109,40 @@ class VeloxObject(object):
     def save(self, prefix=None):
         outpath = self.savepath(prefix=prefix)
         logger.debug('assigned unique filepath: {}'.format(outpath))
+
         with get_aware_filepath(outpath, 'wb') as fileobject:
             self._save(fileobject)
+
         return outpath
 
     @classmethod
     def load(cls, prefix=None, specifier=None, skip_sha=None):
+
         filepath = cls.loadpath(prefix=prefix, specifier=specifier)
         filesha = sha(get_filename(filepath))
 
         if skip_sha == filesha:
             raise VeloxConstraintError('found sha: {} when sha was explicitly '
                                        'blacklisted'.format(skip_sha))
+
         logger.debug('retrieving from filepath: {}'.format(filepath))
+
         with get_aware_filepath(filepath, 'rb') as fileobject:
             obj = cls._load(fileobject)
+            if not issubclass(type(obj), VeloxObject):
+                raise TypeError('loaded object of type {} must inherit from '
+                                'VeloxObject'.format(cls))
             obj.current_sha = filesha
-            return obj
+
+        return obj
 
     def _increment(self):
         replacement = self.__replacement.result()
 
         if self._current_sha != replacement.current_sha:
-            # current_scheduler = self._scheduler
-            # current_job_pointer = self._job_pointer
-            # self.__dict__.update(replacement.__dict__)
-
             logger.debug('will aspire to new version')
-            logger.debug('current sha: {}'.format(self._current_sha))
+            # logger.debug('current sha: {}'.format(self._current_sha))
+            logger.debug('current sha: {}'.format(self.current_sha))
             logger.debug('    new sha: {}'.format(replacement.current_sha))
 
             for k, v in replacement.__dict__.iteritems():
@@ -169,17 +157,21 @@ class VeloxObject(object):
         self.__replacement = None
 
     @threaded
-    def __load_async(self, prefix, specifier):
-        newobj = self.__class__.load(prefix, specifier,
-                                     skip_sha=self.current_sha)
+    def __load_async(self, prefix, specifier, skip_sha):
+        logger.debug('specifying a skip_sha = {}'.format(skip_sha))
+
+        newobj = self.__class__.load(prefix, specifier, skip_sha=skip_sha)
         self.__incr_underway = False
         return newobj
 
     def __reload(self, prefix, specifier):
         self.__incr_underway = True
+
         try:
-            self.__replacement = self.__load_async(prefix, specifier)
+            self.__replacement = self.__load_async(prefix, specifier, None)
+            # self.current_sha)
             self._increment()
+
         except VeloxConstraintError, ve:
             logger.debug('reload skipped. message: {}'.format(ve.args[0]))
 
@@ -202,8 +194,8 @@ class VeloxObject(object):
                 max_instances=1,
                 **interval_trigger_args
             )
-            logger.debug('launched job {}: {}'.format(
-                self._job_pointer.id, self._job_pointer))
+            logger.debug('launched job {}: {}'
+                         .format(self._job_pointer.id, self._job_pointer))
 
         else:
             logger.debug('initializing unscheduled async reload')
@@ -225,7 +217,9 @@ class VeloxObject(object):
 
     def formatted_filename(self):
         return '{timestamp}_{name}.vx'.format(
-            timestamp=timestamp(), name=self.registered_name)
+            timestamp=timestamp(),
+            name=self.registered_name
+        )
 
     def savepath(self, prefix=None):
         if prefix is None:
@@ -275,6 +269,7 @@ class VeloxObject(object):
             version_identifiers = map(get_semver, filelist)
             best_match = cls._version_spec.select(version_identifiers)
             logger.debug('found version to aspire to: {}'.format(best_match))
+
             if best_match is None:
                 raise VeloxConstraintError(
                     'No files matching version requirements {} were '
@@ -305,8 +300,9 @@ class register_model(object):
             raise ValueError('Invalid SemVer string: {}'.format(version))
 
         if registered_name in VeloxObject._registered_object_names:
-            raise VeloxCreationError(
-                'Already a registered class named {}'.format(registered_name))
+            raise VeloxCreationError('Already a registered class named {}'
+                                     .format(registered_name))
+
         VeloxObject._registered_object_names.append(registered_name)
         self.registered_name = registered_name
 
@@ -338,12 +334,17 @@ class register_model(object):
         }
 
         for attr in cls.__dict__:
-            ok = callable(getattr(cls, attr)) and \
-                inspect.getargspec(getattr(cls, attr)).args[0] == 'self' and \
-                not attr.startswith('_') and \
-                attr not in reserved_attr
+
+            ok = (callable(getattr(cls, attr)) and
+                  inspect.getargspec(getattr(cls, attr)).args[0] == 'self' and
+                  not attr.startswith('_') and
+                  attr not in reserved_attr)
 
             if ok or (attr == '__call__'):
+
+                logger.debug('adding zero-reload downtime for method {}'
+                             .format(attr))
+
                 setattr(cls, attr, zero_reload_downtime(getattr(cls, attr)))
 
         return cls

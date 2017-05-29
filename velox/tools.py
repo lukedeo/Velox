@@ -38,7 +38,7 @@ def timestamp():
     Returns a string of the form YYYYMMDDHHMMSS, where 
     HH is in 24hr time for easy sorting
     """
-    return datetime.datetime.utcnow().strftime("%Y%m%d%H%M%S")
+    return datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S%f')
 
 
 class abstractstatic(staticmethod):
@@ -63,37 +63,6 @@ class abstractclassmethod(classmethod):
     def __init__(self, callable):
         callable.__isabstractmethod__ = True
         super(abstractclassmethod, self).__init__(callable)
-
-
-def enforce_return_type(fn):
-    """ Wrapper to ensure that a classmethod has a consistent return type with 
-    the cls argument.
-
-    Args:
-    -----
-        fn: classmethod to wrap
-
-    Returns:
-    --------
-        the output of fn(cls, *args, **kwargs)
-
-    Raises:
-    -------
-        asserts that isinstance(fn(cls, *args, **kwargs), cls) is true.
-    """
-
-    from functools import wraps
-
-    @wraps(fn)
-    def _typesafe_ret_type(cls, *args, **kw):
-        o = fn(cls, *args, **kw)
-        if not isinstance(o, cls):
-            raise TypeError("Return type doesn't match specified "
-                            "{}, found {} instead".format(cls, type(o)))
-        return o
-
-    _typesafe_ret_type.__doc__ = fn.__doc__
-    return _typesafe_ret_type
 
 
 def is_enforced_func(f):
@@ -129,8 +98,8 @@ def zero_reload_downtime(fn):
         if cls._needs_increment:
             logger.info('model version increment needed')
             cls._increment()
-        else:
-            return fn(cls, *args, **kw)
+        # else:
+        return fn(cls, *args, **kw)
 
     _respect_reload.__doc__ = fn.__doc__
     return _respect_reload

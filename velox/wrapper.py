@@ -1,3 +1,5 @@
+import pickle
+
 from .obj import VeloxObject, register_model
 
 
