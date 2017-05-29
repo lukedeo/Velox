@@ -11,9 +11,10 @@ matrix:
 before_install:
   - sudo apt-get update
 install:
+  - mkdir ~/.aws && printf "[default]\noutput = json\nregion = us-west-2" > ~/.aws/config
   - export BASE_DIR=$(pwd)
   - echo $(python --version)
-  - pip install -e .[tests]
+  - pip install -e .[aws,tests]
   - cd $BASE_DIR
 # command to run tests
 script:
