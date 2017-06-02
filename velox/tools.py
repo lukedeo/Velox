@@ -1,24 +1,17 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-""" 
-file: tools.py
-description: useful tools for velox
-author: Luke de Oliveira (lukedeo@vaitech.io)
+"""
+## `velox.tools`
+
+The `velox.tools` submodule provides general support utilities to the Velox 
+package.
 """
 
-from contextlib import contextmanager
 import datetime
-from errno import EEXIST
 from hashlib import md5
-import logging
-from os import makedirs
-import os
-import tempfile
 from threading import Thread
 
 from concurrent.futures import Future
-
-logger = logging.getLogger(__name__)
 
 
 def sha(s):
@@ -35,24 +28,17 @@ def sha(s):
 
 def timestamp():
     """ 
-    Returns a string of the form YYYYMMDDHHMMSS, where 
-    HH is in 24hr time for easy sorting
+    Returns a string of the form YYYYMMDDHHmmSSCCCCCC, where 
+
+    * `YYYY` is the current year
+    * `MM` is the current month, with zero padding to the left
+    * `DD` is the current day, zero padded on the left
+    * `HH`is the current hour, zero padded on the left
+    * `mm`is the current minute, zero padded on the left
+    * `CCCCCC`is the current microsecond as a decimal number, 
+        zero padded on the left
     """
     return datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S%f')
-
-
-class abstractstatic(staticmethod):
-
-    # we want to enforce an implementation of a static method using the ABC
-    # pattern. This hack allows you to enforce registration of a non-abstract
-    # version of a function
-
-    __slots__ = ()
-
-    def __init__(self, function):
-        super(abstractstatic, self).__init__(function)
-        function.__isabstractmethod__ = True
-    __isabstractmethod__ = True
 
 
 class abstractclassmethod(classmethod):
@@ -65,14 +51,6 @@ class abstractclassmethod(classmethod):
         super(abstractclassmethod, self).__init__(callable)
 
 
-def is_enforced_func(f):
-    """
-    Boolean test for whether or not a class method has been wrapped 
-    with @enforce_return_type
-    """
-    return f.__code__.co_name == '_typesafe_ret_type'
-
-
 def call_with_future(fn, future, args, kwargs):
     try:
         result = fn(*args, **kwargs)
@@ -82,6 +60,22 @@ def call_with_future(fn, future, args, kwargs):
 
 
 def threaded(fn):
+    """
+    A simple decorator that allows a function to be called with its return 
+    value given as a `Future` object.
+
+    Example:
+    --------
+
+        #!python
+        @threaded
+        def fn(x):
+            return x ** 2
+
+        a = fn(6)
+        assert a.result() == 36
+    """
+
     def wrapper(*args, **kwargs):
         future = Future()
         Thread(target=call_with_future,
@@ -89,17 +83,4 @@ def threaded(fn):
         return future
     return wrapper
 
-
-def zero_reload_downtime(fn):
-    from functools import wraps
-
-    @wraps(fn)
-    def _respect_reload(cls, *args, **kw):
-        if cls._needs_increment:
-            logger.info('model version increment needed')
-            cls._increment()
-        # else:
-        return fn(cls, *args, **kw)
-
-    _respect_reload.__doc__ = fn.__doc__
-    return _respect_reload
+__all__ = ['threaded', 'timestamp']

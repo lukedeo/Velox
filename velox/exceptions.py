@@ -1,9 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-""" 
-file: exceptions.py
-description: all exceptions for Velox
-author: Luke de Oliveira (lukedeo@vaitech.io)
+"""
+## `velox.exceptions`
+
+The `velox.exceptions` submodule defines all the exceptions that are specific 
+to the Velox ecosystem.
 """
 
 

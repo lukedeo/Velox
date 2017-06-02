@@ -45,6 +45,30 @@ def test_inconsistent_load_type():
     RESET()
 
 
+def test_missing_super_class_init():
+
+    @register_model(registered_name='missing')
+    class MissingInit(VeloxObject):
+
+        def __init__(self):
+            pass
+
+        def _save(self, fileobject):
+            pass
+
+        @classmethod
+        def _load(cls, fileobject):
+            return cls()
+
+        def method(self):
+            pass
+
+    with pytest.raises(VeloxCreationError):
+        MissingInit().method()
+
+    RESET()
+
+
 @register_model(
     registered_name='veloxmodel',
     version='0.1.0'
@@ -207,6 +231,12 @@ def test_reloading():
 
         with pytest.raises(ValueError):
             o.current_sha = 'foo'
+
+        o.cancel_scheduled_reload()
+
+        with pytest.raises(ValueError):
+            o.cancel_scheduled_reload()
+
     RESET()
 
 

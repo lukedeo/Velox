@@ -1,25 +1,28 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-""" 
-file: filesystem.py
-description: useful tools for dealing with the filesystem for velox
-author: Luke de Oliveira (lukedeo@manifold.ai)
+"""
+## `velox.filesystem`
+
+The `velox.filesystem` submodule provides support utilities related to 
+managing files (and by extension, S3) to the Velox ecosystem.
 """
 
 from contextlib import contextmanager
-import datetime
-from errno import EEXIST
+import errno
 import fnmatch
 from glob import glob
 import logging
 import os
 from tempfile import mkstemp
 
-
 logger = logging.getLogger(__name__)
 
 
 def find_matching_files(prefix, specifier):
+    """
+    Searches for files matching the `specifier` at the `prefix` location 
+    (which can be on S3).
+    """
     if not is_s3_path(prefix):
         logger.debug('Searching on filesystem')
         filelist = sorted(glob(os.path.join(prefix, specifier)))
@@ -53,6 +56,12 @@ def stitch_filename(prefix, filename):
 
 
 def ensure_exists(prefix):
+    """
+    Safely ensures that the specified `prefix` exists. If `prefix` would point
+    to a location on a reachable file system, it will safely create the 
+    necessary directory path respecting race conditions. If `prefix` would 
+    point to S3, it creates the bucket, if one doesn't already exist.
+    """
 
     if not is_s3_path(prefix):
         logger.debug('Safely ensuring {} exists.'.format(prefix))
@@ -92,7 +101,7 @@ def safe_mkdir(path):
         logger.debug('safely making (or skipping) directory: {}'.format(path))
         os.makedirs(path)
     except OSError as exception:
-        if exception.errno != EEXIST:
+        if exception.errno != errno.EEXIST:
             raise exception
 
 
@@ -111,28 +120,35 @@ def parse_s3(pth):
 
 @contextmanager
 def get_aware_filepath(path, mode='wb', session=None):
-    """ context handler for dealing with local fs and remote (s3 only...)
+    """ context handler for dealing with local fs and remote (S3 only...)
 
     Args:
     -----
-        path (str): path to object you wish to write. Can be 
-            either /path/to/desired/file.fmt, or s3://myBucketName/this/is/a.key
+    * `path (str)`: path to object you wish to write. Can be 
+            either `/path/to/desired/file.fmt`, or 
+            `s3://myBucketName/this/is/a.key`
 
-        mode: one of {rb, wb}
+    * `mode (str)`: one of {rb, wb}
 
-        session (None, boto3.Session): can pass in a custom boto3 session 
+    * `session (None | boto3.Session)`: can pass in a custom boto3 session 
         if need be
 
     Example:
     --------
 
+        #!python
         with get_aware_filepath('s3://bucket/file.txt', 'wb') as f:
             f.write('foobar')
 
         with get_aware_filepath('s3://bucket/file.txt', 'rb') as f:
-            print f.read() 
+            assert f.read() == 'foobar'
 
-        # foobar
+    Raises:
+    -------
+
+    * `ValueError` if `mode` is not one of the allowed modes.
+
+
     """
 
     if mode not in {'rb', 'wb'}:
@@ -181,3 +197,5 @@ def get_aware_filepath(path, mode='wb', session=None):
         os.remove(temp_fp)
 
         logger.debug('cleaned up, releasing')
+
+__all__ = ['get_aware_filepath', 'ensure_exists']
