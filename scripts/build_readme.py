@@ -4,28 +4,28 @@ if __name__ == '__main__':
 
     import sys
     import re
-    import cupboard
+    import velox
 
     readme = re.sub(
-        '(<!--begin_code-->)(\W*)(#!python)',
-        '```python',
-        cupboard.__doc__
+        u'(<!--begin_code-->)(\W*)(#!python)',
+        u'```python',
+        velox.__doc__
     )
 
     readme = re.sub(
-        '(<!--end_code-->)',
-        '```',
+        u'(<!--end_code-->)',
+        u'```',
         readme
     )
 
     code_block = False
     stitched = []
-    for line in readme.split('\n'):
-        line = line.replace('\t', 4 * ' ')
-        if line.strip().replace(' ', '') == '---':
+    for line in readme.split(u'\n'):
+        line = line.replace(u'\t', 4 * u' ')
+        if line.strip().replace(u' ', u'') == u'---':
             continue
         if line.startswith(' '):
             line = line[4:]
         stitched.append(line)
-    readme = '\n'.join(stitched)
+    readme = u'\n'.join(stitched)
     print readme
