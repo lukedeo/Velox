@@ -15,6 +15,7 @@ Velox provides two main utilities:
 * Velox allows the ability to do a model / blob hotswap in-place for a new binary version.
 
 ## Requirements
+---
 
 Velox currently only supports Python 2.7, but **we would love contributions towards Python 3 support** 😁
 
@@ -24,7 +25,8 @@ To run the tests, you'll need the brilliant `moto` library, the `backports.tempf
 
 For logging, simply grab the Velox logger by the `velox` handle.
 
-## `VeloxObject` ABC
+## `VeloxObject` Abstract Base Class
+---
 
 Functionality is exposed using the `VeloxObject` abstract base class (ABC). A subclass of a `velox.obj.VeloxObject` needs to implement three things in order for the library to know how to manage it.
 
@@ -32,7 +34,9 @@ Functionality is exposed using the `VeloxObject` abstract base class (ABC). A su
 * Your class must implement a `_save` object method that takes as input a file object and does whatever is needed to save the object.
 * Your class must implement a `_load` class method (with the `@classmethod` decorator) that takes as input a file object and reconstructs and returns an instance of your class.
 
-Here is an example:
+This allows you to abstract away much of the messiness in bookkeeping.
+
+Here is an example using [`gensim`](https://github.com/RaRe-Technologies/gensim) to build a topic model and keep track of all the necessary ETL-type objects that follow:
 
 <!--begin_code-->
     #!python
@@ -41,10 +45,10 @@ Here is an example:
         version='0.1.0-alpha',
         version_constraints='>=0.1.0,<0.2.0'
     )
-    class FooBar(VeloxObject):
-        def __init__(self, big_object):
+    class ChurnModel(VeloxObject):
+        def __init__(self, submodel):
             super(VeloxObject, self).__init__()
-            self._big_object = big_object
+            self._submodel = submodel
 
         def _save(self, fileobject):
             pickle.dump(self, fileobject)
@@ -54,7 +58,7 @@ Here is an example:
             return pickle.load(fileobject)
 
         def predict(self, X):
-            return self._big_object.predict(X)
+            return self._submodel.predict(X)
 <!--end_code-->
 
 """
@@ -66,9 +70,6 @@ logging.getLogger('velox').addHandler(logging.NullHandler())
 __version__ = '0.1.0'
 
 from .obj import VeloxObject, register_model
-# from .filesystem import get_aware_filepath
-# from .exceptions import VeloxCreationError, VeloxConstraintError
-# from .wrapper import SimplePickle, SimpleKeras
 
 import filesystem
 import exceptions
@@ -76,13 +77,4 @@ import tools
 import obj
 import wrapper
 
-# __all__ = ['velox.obj.VeloxObject', 'velox.obj.register_model', 'filesystem.get_aware_filepath',
-#            'exceptions.VeloxConstraintError', 'exceptions.VeloxCreationError', 'wrapper.SimpleKeras',
-#            'wrapper.SimplePickle']
-
-# __all__ = ['VeloxObject', 'register_model', 'filesystem',
-#            'exceptions', 'tools', 'obj', 'wrapper']
-
 __all__ = ['filesystem', 'exceptions', 'tools', 'obj', 'wrapper']
-
-# __all__ = ['filesystem', 'exceptions', 'tools', 'obj', 'wrapper']

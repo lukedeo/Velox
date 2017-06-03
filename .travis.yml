@@ -16,6 +16,7 @@ install:
   - echo $(python --version)
   - pip install -e .[aws,tests]
   - cd $BASE_DIR
+  
 # command to run tests
 script:
   - PYTHONPATH=$(pwd) py.test --pep8 -m pep8
