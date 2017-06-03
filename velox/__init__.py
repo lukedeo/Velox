@@ -3,7 +3,7 @@
 
 u"""
 
-<img src="img/velox-logo.png" width=37% align="right" />
+<img src="https://github.com/lukedeo/Velox/raw/master/img/velox-logo.png" width=37% align="right" />
 
 # Welcome to Velox!
 
