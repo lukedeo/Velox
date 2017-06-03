@@ -1045,7 +1045,7 @@ table {
 </div>
 <article id="content">
 <header id="section-intro">
-<p><img align="right" src="../img/velox-logo.png" width="37%"/></p>
+<p><img align="right" src="https://github.com/lukedeo/Velox/raw/master/img/velox-logo.png" width="37%"/></p>
 <h1>Welcome to Velox!</h1>
 <p>Deploying and managing live machine learning models is difficult. It involves a mix of handling model versioning, hot-swapping new versions and determining version constraint satisfaction on-the-fly, and managing binary file movement either on a networked or local file system or with a cloud storage system like S3. Velox can handle this for you with a simple base class enforcing opinionated methods of handling the above problems.</p>
 <p>Velox provides two main utilities:</p>
@@ -1054,28 +1054,31 @@ table {
 <li>Velox allows the ability to do a model / blob hotswap in-place for a new binary version.</li>
 </ul>
 <h2>Requirements</h2>
+<hr/>
 <p>Velox currently only supports Python 2.7, but <strong>we would love contributions towards Python 3 support</strong> 😁</p>
 <p>The main requirements are <code>apscheduler</code> for scheduling hot-swaps, <code>semantic_version</code> for version sanity, and the <code>futures</code> Python 2.7 backport. If you want to be able to work with S3, you'll need <code>boto3</code> (and a valid and properly set up AWS account).</p>
 <p>To run the tests, you'll need the brilliant <code>moto</code> library, the <code>backports.tempfile</code> library for Python 2.7 compatibility, and <code>Keras</code> and <code>sckit-learn</code>.</p>
 <p>For logging, simply grab the Velox logger by the <code>velox</code> handle.</p>
-<h2><code>VeloxObject</code> ABC</h2>
+<h2><code>VeloxObject</code> Abstract Base Class</h2>
+<hr/>
 <p>Functionality is exposed using the <code>VeloxObject</code> abstract base class (ABC). A subclass of a <a href="obj.m.html#velox.obj.VeloxObject"><code>velox.obj.VeloxObject</code></a> needs to implement three things in order for the library to know how to manage it.</p>
 <ul>
 <li>Your class must be defined with a <a href="obj.m.html#velox.obj.register_model"><code>velox.obj.register_model</code></a> decorator around it.</li>
 <li>Your class must implement a <code>_save</code> object method that takes as input a file object and does whatever is needed to save the object.</li>
 <li>Your class must implement a <code>_load</code> class method (with the <code>@classmethod</code> decorator) that takes as input a file object and reconstructs and returns an instance of your class.</li>
 </ul>
-<p>Here is an example:</p>
+<p>This allows you to abstract away much of the messiness in bookkeeping.</p>
+<p>Here is an example using <a href="https://github.com/RaRe-Technologies/gensim"><code>gensim</code></a> to build a topic model and keep track of all the necessary ETL-type objects that follow:</p>
 <!--begin_code-->
 <div class="codehilite"><pre><span></span><span class="nd">@register_model</span><span class="p">(</span>
     <span class="n">registered_name</span><span class="o">=</span><span class="s1">'foobar'</span><span class="p">,</span>
     <span class="n">version</span><span class="o">=</span><span class="s1">'0.1.0-alpha'</span><span class="p">,</span>
     <span class="n">version_constraints</span><span class="o">=</span><span class="s1">'&gt;=0.1.0,&lt;0.2.0'</span>
 <span class="p">)</span>
-<span class="k">class</span> <span class="nc">FooBar</span><span class="p">(</span><span class="n">VeloxObject</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">big_object</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">ChurnModel</span><span class="p">(</span><span class="n">VeloxObject</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">submodel</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">VeloxObject</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_big_object</span> <span class="o">=</span> <span class="n">big_object</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_submodel</span> <span class="o">=</span> <span class="n">submodel</span>
 
     <span class="k">def</span> <span class="nf">_save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fileobject</span><span class="p">):</span>
         <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fileobject</span><span class="p">)</span>
@@ -1085,7 +1088,7 @@ table {
         <span class="k">return</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">fileobject</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_big_object</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_submodel</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
 </pre></div>
 <!--end_code-->
 </header>
