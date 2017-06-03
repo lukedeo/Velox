@@ -1,6 +1,6 @@
 
 
-<img src="img/velox-logo.png" width=37% align="right" />
+<img src="https://github.com/lukedeo/Velox/raw/master/img/velox-logo.png" width=37% align="right" />
 
 # Welcome to Velox!
 
@@ -21,7 +21,7 @@ To run the tests, you'll need the brilliant `moto` library, the `backports.tempf
 
 For logging, simply grab the Velox logger by the `velox` handle.
 
-## `VeloxObject` ABC
+## `VeloxObject` Abstract Base Class
 
 Functionality is exposed using the `VeloxObject` abstract base class (ABC). A subclass of a `velox.obj.VeloxObject` needs to implement three things in order for the library to know how to manage it.
 
@@ -29,7 +29,9 @@ Functionality is exposed using the `VeloxObject` abstract base class (ABC). A su
 * Your class must implement a `_save` object method that takes as input a file object and does whatever is needed to save the object.
 * Your class must implement a `_load` class method (with the `@classmethod` decorator) that takes as input a file object and reconstructs and returns an instance of your class.
 
-Here is an example:
+This allows you to abstract away much of the messiness in bookkeeping.
+
+Here is an example using [`gensim`](https://github.com/RaRe-Technologies/gensim) to build a topic model and keep track of all the necessary ETL-type objects that follow:
 
 ```python
 @register_model(
@@ -37,10 +39,10 @@ Here is an example:
     version='0.1.0-alpha',
     version_constraints='>=0.1.0,<0.2.0'
 )
-class FooBar(VeloxObject):
-    def __init__(self, big_object):
+class ChurnModel(VeloxObject):
+    def __init__(self, submodel):
         super(VeloxObject, self).__init__()
-        self._big_object = big_object
+        self._submodel = submodel
 
     def _save(self, fileobject):
         pickle.dump(self, fileobject)
@@ -50,7 +52,7 @@ class FooBar(VeloxObject):
         return pickle.load(fileobject)
 
     def predict(self, X):
-        return self._big_object.predict(X)
+        return self._submodel.predict(X)
 ```
 
 
