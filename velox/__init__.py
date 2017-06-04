@@ -66,12 +66,12 @@ Here is a full example using [`gensim`](https://github.com/RaRe-Technologies/gen
 
 <!--begin_code-->  
     #!python
+
     from gensim.corpora import Dictionary
     from gensim.models.ldamulticore import LdaMulticore
     from spacy.en import English
 
     nlp = English()
-
 
     @register_model('lda', '0.2.1')
     class LDAModel(VeloxObject):
@@ -144,7 +144,6 @@ Here is a full example using [`gensim`](https://github.com/RaRe-Technologies/gen
             shutil.rmtree(tmpdir)
 
             return model
-
 <!--end_code-->
 
 
