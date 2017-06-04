@@ -1093,7 +1093,8 @@ table {
 <!--end_code-->
 <p>Here is a full example using <a href="https://github.com/RaRe-Technologies/gensim"><code>gensim</code></a> to build a topic model and keep track of all the necessary ETL-type objects that follow:</p>
 <!--begin_code-->
-<p>from gensim.corpora import Dictionary
+<p>#!python
+    from gensim.corpora import Dictionary
     from gensim.models.ldamulticore import LdaMulticore
     from spacy.en import English</p>
 <div class="codehilite"><pre><span></span><span class="nx">nlp</span> <span class="o">=</span> <span class="nx">English</span><span class="p">()</span>

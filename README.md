@@ -58,7 +58,7 @@ class ChurnModel(VeloxObject):
 
 Here is a full example using [`gensim`](https://github.com/RaRe-Technologies/gensim) to build a topic model and keep track of all the necessary ETL-type objects that follow:
 
-<!--begin_code-->  
+```python
 from gensim.corpora import Dictionary
 from gensim.models.ldamulticore import LdaMulticore
 from spacy.en import English
