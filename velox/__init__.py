@@ -66,7 +66,6 @@ Here is a full example using [`gensim`](https://github.com/RaRe-Technologies/gen
 
 <!--begin_code-->  
     #!python
-
     from gensim.corpora import Dictionary
     from gensim.models.ldamulticore import LdaMulticore
     from spacy.en import English
