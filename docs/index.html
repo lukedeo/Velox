@@ -1093,84 +1093,84 @@ table {
 <!--end_code-->
 <p>Here is a full example using <a href="https://github.com/RaRe-Technologies/gensim"><code>gensim</code></a> to build a topic model and keep track of all the necessary ETL-type objects that follow:</p>
 <!--begin_code-->
-<p>#!python
-    from gensim.corpora import Dictionary
-    from gensim.models.ldamulticore import LdaMulticore
-    from spacy.en import English</p>
-<div class="codehilite"><pre><span></span><span class="nx">nlp</span> <span class="o">=</span> <span class="nx">English</span><span class="p">()</span>
+<p>#!python</p>
+<div class="codehilite"><pre><span></span><span class="kn">from</span> <span class="nn">gensim.corpora</span> <span class="kn">import</span> <span class="n">Dictionary</span>
+<span class="kn">from</span> <span class="nn">gensim.models.ldamulticore</span> <span class="kn">import</span> <span class="n">LdaMulticore</span>
+<span class="kn">from</span> <span class="nn">spacy.en</span> <span class="kn">import</span> <span class="n">English</span>
 
+<span class="n">nlp</span> <span class="o">=</span> <span class="n">English</span><span class="p">()</span>
 
-<span class="kd">@register_model</span><span class="p">(</span><span class="s1">'lda'</span><span class="p">,</span> <span class="s1">'0.2.1'</span><span class="p">)</span>
-<span class="kr">class</span> <span class="nx">LDAModel</span><span class="p">(</span><span class="nx">VeloxObject</span><span class="p">)</span><span class="o">:</span>
+<span class="nd">@register_model</span><span class="p">(</span><span class="s1">'lda'</span><span class="p">,</span> <span class="s1">'0.2.1'</span><span class="p">)</span>
+<span class="k">class</span> <span class="nc">LDAModel</span><span class="p">(</span><span class="n">VeloxObject</span><span class="p">):</span>
 
-    <span class="nx">def</span> <span class="nx">__init__</span><span class="p">(</span><span class="nx">self</span><span class="p">,</span> <span class="nx">n_components</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span><span class="o">:</span>
-        <span class="kr">super</span><span class="p">(</span><span class="nx">LDAModel</span><span class="p">,</span> <span class="nx">self</span><span class="p">).</span><span class="nx">__init__</span><span class="p">()</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_components</span><span class="o">=</span><span class="mi">50</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">LDAModel</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
-        <span class="nx">self</span><span class="p">.</span><span class="nx">_n_components</span> <span class="o">=</span> <span class="nx">n_components</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_n_components</span> <span class="o">=</span> <span class="n">n_components</span>
 
-    <span class="kd">@staticmethod</span>
-    <span class="nx">def</span> <span class="nx">tokenize</span><span class="p">(</span><span class="nx">text</span><span class="p">)</span><span class="o">:</span>
-        <span class="k">return</span> <span class="p">[</span><span class="nx">t</span><span class="p">.</span><span class="nx">text</span><span class="p">.</span><span class="nx">lower</span><span class="p">()</span> <span class="k">for</span> <span class="nx">t</span> <span class="k">in</span> <span class="nx">nlp</span><span class="p">(</span><span class="nx">unicode</span><span class="p">(</span><span class="nx">text</span><span class="p">))</span> <span class="k">if</span> <span class="nx">t</span><span class="p">.</span><span class="nx">text</span><span class="p">.</span><span class="nx">strip</span><span class="p">()]</span>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span> <span class="nf">tokenize</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">nlp</span><span class="p">(</span><span class="nb">unicode</span><span class="p">(</span><span class="n">text</span><span class="p">))</span> <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span>
 
-    <span class="nx">def</span> <span class="nx">fit</span><span class="p">(</span><span class="nx">self</span><span class="p">,</span> <span class="nx">texts</span><span class="p">,</span> <span class="nx">passes</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="nx">n_workers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="nx">no_below</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="nx">no_above</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span><span class="o">:</span>
-        <span class="nx">tokenized</span> <span class="o">=</span> <span class="nx">map</span><span class="p">(</span><span class="nx">self</span><span class="p">.</span><span class="nx">tokenize</span><span class="p">,</span> <span class="nx">texts</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">texts</span><span class="p">,</span> <span class="n">passes</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">n_workers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">no_below</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">no_above</span><span class="o">=</span><span class="mf">0.2</span><span class="p">):</span>
+        <span class="n">tokenized</span> <span class="o">=</span> <span class="nb">map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tokenize</span><span class="p">,</span> <span class="n">texts</span><span class="p">)</span>
 
-        <span class="nx">self</span><span class="p">.</span><span class="nx">_dictionary</span> <span class="o">=</span> <span class="nx">Dictionary</span><span class="p">(</span><span class="nx">tokenized</span><span class="p">)</span>
-        <span class="nx">self</span><span class="p">.</span><span class="nx">_dictionary</span><span class="p">.</span><span class="nx">filter_extremes</span><span class="p">(</span><span class="nx">no_below</span><span class="o">=</span><span class="nx">no_below</span><span class="p">,</span> <span class="nx">no_above</span><span class="o">=</span><span class="nx">no_above</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dictionary</span> <span class="o">=</span> <span class="n">Dictionary</span><span class="p">(</span><span class="n">tokenized</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dictionary</span><span class="o">.</span><span class="n">filter_extremes</span><span class="p">(</span><span class="n">no_below</span><span class="o">=</span><span class="n">no_below</span><span class="p">,</span> <span class="n">no_above</span><span class="o">=</span><span class="n">no_above</span><span class="p">)</span>
 
-        <span class="nx">self</span><span class="p">.</span><span class="nx">_lda</span> <span class="o">=</span> <span class="nx">LdaMulticore</span><span class="p">(</span>
-            <span class="nx">corpus</span><span class="o">=</span><span class="nx">map</span><span class="p">(</span><span class="nx">self</span><span class="p">.</span><span class="nx">_dictionary</span><span class="p">.</span><span class="nx">doc2bow</span><span class="p">,</span> <span class="nx">tokenized</span><span class="p">),</span>
-            <span class="nx">workers</span><span class="o">=</span><span class="nx">n_workers</span><span class="p">,</span>
-            <span class="nx">num_topics</span><span class="o">=</span><span class="nx">self</span><span class="p">.</span><span class="nx">_n_components</span><span class="p">,</span>
-            <span class="nx">id2word</span><span class="o">=</span><span class="nx">self</span><span class="p">.</span><span class="nx">_dictionary</span><span class="p">,</span>
-            <span class="nx">passes</span><span class="o">=</span><span class="nx">passes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_lda</span> <span class="o">=</span> <span class="n">LdaMulticore</span><span class="p">(</span>
+            <span class="n">corpus</span><span class="o">=</span><span class="nb">map</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dictionary</span><span class="o">.</span><span class="n">doc2bow</span><span class="p">,</span> <span class="n">tokenized</span><span class="p">),</span>
+            <span class="n">workers</span><span class="o">=</span><span class="n">n_workers</span><span class="p">,</span>
+            <span class="n">num_topics</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_components</span><span class="p">,</span>
+            <span class="n">id2word</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dictionary</span><span class="p">,</span>
+            <span class="n">passes</span><span class="o">=</span><span class="n">passes</span>
         <span class="p">)</span>
 
-        <span class="k">return</span> <span class="nx">self</span>
+        <span class="k">return</span> <span class="bp">self</span>
 
-    <span class="nx">def</span> <span class="nx">transform</span><span class="p">(</span><span class="nx">self</span><span class="p">,</span> <span class="nx">texts</span><span class="p">)</span><span class="o">:</span>
-        <span class="nx">feats</span> <span class="o">=</span> <span class="p">(</span><span class="nx">self</span><span class="p">.</span><span class="nx">_dictionary</span><span class="p">.</span><span class="nx">doc2bow</span><span class="p">(</span><span class="nx">self</span><span class="p">.</span><span class="nx">tokenize</span><span class="p">(</span><span class="nx">q</span><span class="p">))</span> <span class="k">for</span> <span class="nx">q</span> <span class="k">in</span> <span class="nx">texts</span><span class="p">)</span>
-        <span class="nx">vecs</span> <span class="o">=</span> <span class="nx">list</span><span class="p">(</span><span class="nx">self</span><span class="p">.</span><span class="nx">_lda</span><span class="p">[</span><span class="nx">feats</span><span class="p">])</span>
+    <span class="k">def</span> <span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">texts</span><span class="p">):</span>
+        <span class="n">feats</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dictionary</span><span class="o">.</span><span class="n">doc2bow</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tokenize</span><span class="p">(</span><span class="n">q</span><span class="p">))</span> <span class="k">for</span> <span class="n">q</span> <span class="ow">in</span> <span class="n">texts</span><span class="p">)</span>
+        <span class="n">vecs</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_lda</span><span class="p">[</span><span class="n">feats</span><span class="p">])</span>
 
-        <span class="nx">X</span> <span class="o">=</span> <span class="nx">np</span><span class="p">.</span><span class="nx">zeros</span><span class="p">((</span><span class="nx">len</span><span class="p">(</span><span class="nx">vecs</span><span class="p">),</span> <span class="nx">self</span><span class="p">.</span><span class="nx">_lda</span><span class="p">.</span><span class="nx">num_topics</span><span class="p">))</span>
-        <span class="k">for</span> <span class="nx">i</span><span class="p">,</span> <span class="nx">v</span> <span class="k">in</span> <span class="nx">enumerate</span><span class="p">(</span><span class="nx">vecs</span><span class="p">)</span><span class="o">:</span>
-            <span class="nx">ix</span><span class="p">,</span> <span class="nx">val</span> <span class="o">=</span> <span class="nx">zip</span><span class="p">(</span><span class="o">*</span><span class="nx">v</span><span class="p">)</span>
-            <span class="nx">X</span><span class="p">[</span><span class="nx">i</span><span class="p">][</span><span class="nx">np</span><span class="p">.</span><span class="nx">array</span><span class="p">(</span><span class="nx">ix</span><span class="p">)]</span> <span class="o">=</span> <span class="nx">val</span>
-        <span class="k">return</span> <span class="nx">X</span>
+        <span class="n">X</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">vecs</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_lda</span><span class="o">.</span><span class="n">num_topics</span><span class="p">))</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">vecs</span><span class="p">):</span>
+            <span class="n">ix</span><span class="p">,</span> <span class="n">val</span> <span class="o">=</span> <span class="nb">zip</span><span class="p">(</span><span class="o">*</span><span class="n">v</span><span class="p">)</span>
+            <span class="n">X</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ix</span><span class="p">)]</span> <span class="o">=</span> <span class="n">val</span>
+        <span class="k">return</span> <span class="n">X</span>
 
-    <span class="nx">def</span> <span class="nx">_save</span><span class="p">(</span><span class="nx">self</span><span class="p">,</span> <span class="nx">fileobject</span><span class="p">)</span><span class="o">:</span>
-        <span class="kd">with</span> <span class="nx">tarfile</span><span class="p">.</span><span class="nx">open</span><span class="p">(</span><span class="nx">fileobject</span><span class="p">.</span><span class="nx">name</span><span class="p">,</span> <span class="s1">'w:'</span><span class="p">)</span> <span class="kr">as</span> <span class="nx">tf</span>:
-            <span class="kt">with</span> <span class="nx">tempfile</span><span class="p">.</span><span class="nx">NamedTemporaryFile</span><span class="p">()</span> <span class="kr">as</span> <span class="nx">tmp</span>:
-                <span class="kt">self._dictionary.save</span><span class="p">(</span><span class="nx">tmp</span><span class="p">.</span><span class="nx">name</span><span class="p">)</span>
-                <span class="nx">tf</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="nx">tmp</span><span class="p">.</span><span class="nx">name</span><span class="p">,</span> <span class="s1">'dict.model'</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">_save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fileobject</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">tarfile</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">fileobject</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s1">'w:'</span><span class="p">)</span> <span class="k">as</span> <span class="n">tf</span><span class="p">:</span>
+            <span class="k">with</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">NamedTemporaryFile</span><span class="p">()</span> <span class="k">as</span> <span class="n">tmp</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_dictionary</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">tmp</span><span class="o">.</span><span class="n">name</span><span class="p">)</span>
+                <span class="n">tf</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">tmp</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s1">'dict.model'</span><span class="p">)</span>
 
-            <span class="nx">tmpdir</span> <span class="o">=</span> <span class="nx">tempfile</span><span class="p">.</span><span class="nx">mkdtemp</span><span class="p">()</span>
+            <span class="n">tmpdir</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mkdtemp</span><span class="p">()</span>
 
-            <span class="nx">sp</span> <span class="o">=</span> <span class="nx">os</span><span class="p">.</span><span class="nx">path</span><span class="p">.</span><span class="nx">join</span><span class="p">(</span><span class="nx">tmpdir</span><span class="p">,</span> <span class="s1">'lda.model'</span><span class="p">)</span>
-            <span class="nx">self</span><span class="p">.</span><span class="nx">_lda</span><span class="p">.</span><span class="nx">save</span><span class="p">(</span><span class="nx">sp</span><span class="p">)</span>
+            <span class="n">sp</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tmpdir</span><span class="p">,</span> <span class="s1">'lda.model'</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_lda</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">sp</span><span class="p">)</span>
 
-            <span class="nx">tf</span><span class="p">.</span><span class="nx">add</span><span class="p">(</span><span class="nx">tmpdir</span><span class="p">,</span> <span class="s1">'lda.dir'</span><span class="p">)</span>
-        <span class="nx">print</span> <span class="nx">tmpdir</span>
+            <span class="n">tf</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">tmpdir</span><span class="p">,</span> <span class="s1">'lda.dir'</span><span class="p">)</span>
+        <span class="k">print</span> <span class="n">tmpdir</span>
 
-    <span class="kd">@classmethod</span>
-    <span class="nx">def</span> <span class="nx">_load</span><span class="p">(</span><span class="nx">cls</span><span class="p">,</span> <span class="nx">fileobject</span><span class="p">)</span><span class="o">:</span>
+    <span class="nd">@classmethod</span>
+    <span class="k">def</span> <span class="nf">_load</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">fileobject</span><span class="p">):</span>
 
-        <span class="nx">tmpdir</span> <span class="o">=</span> <span class="nx">tempfile</span><span class="p">.</span><span class="nx">mkdtemp</span><span class="p">()</span>
-        <span class="kd">with</span> <span class="nx">tarfile</span><span class="p">.</span><span class="nx">open</span><span class="p">(</span><span class="nx">fileobject</span><span class="p">.</span><span class="nx">name</span><span class="p">,</span> <span class="s1">'r:*'</span><span class="p">)</span> <span class="kr">as</span> <span class="nx">tf</span>:
-            <span class="kt">tf.extractall</span><span class="p">(</span><span class="nx">tmpdir</span><span class="p">)</span>
+        <span class="n">tmpdir</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">mkdtemp</span><span class="p">()</span>
+        <span class="k">with</span> <span class="n">tarfile</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">fileobject</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s1">'r:*'</span><span class="p">)</span> <span class="k">as</span> <span class="n">tf</span><span class="p">:</span>
+            <span class="n">tf</span><span class="o">.</span><span class="n">extractall</span><span class="p">(</span><span class="n">tmpdir</span><span class="p">)</span>
 
-        <span class="nx">model</span> <span class="o">=</span> <span class="nx">cls</span><span class="p">()</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">()</span>
 
-        <span class="nx">_dictionary</span> <span class="o">=</span> <span class="nx">Dictionary</span><span class="p">.</span><span class="nx">load</span><span class="p">(</span><span class="nx">os</span><span class="p">.</span><span class="nx">path</span><span class="p">.</span><span class="nx">join</span><span class="p">(</span><span class="nx">tmpdir</span><span class="p">,</span> <span class="s1">'dict.model'</span><span class="p">))</span>
-        <span class="nx">_lda</span> <span class="o">=</span> <span class="nx">LdaMulticore</span><span class="p">.</span><span class="nx">load</span><span class="p">(</span><span class="nx">os</span><span class="p">.</span><span class="nx">path</span><span class="p">.</span><span class="nx">join</span><span class="p">(</span><span class="nx">tmpdir</span><span class="p">,</span> <span class="s1">'lda.dir'</span><span class="p">,</span> <span class="s1">'lda.model'</span><span class="p">))</span>
+        <span class="n">_dictionary</span> <span class="o">=</span> <span class="n">Dictionary</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tmpdir</span><span class="p">,</span> <span class="s1">'dict.model'</span><span class="p">))</span>
+        <span class="n">_lda</span> <span class="o">=</span> <span class="n">LdaMulticore</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">tmpdir</span><span class="p">,</span> <span class="s1">'lda.dir'</span><span class="p">,</span> <span class="s1">'lda.model'</span><span class="p">))</span>
 
-        <span class="nx">setattr</span><span class="p">(</span><span class="nx">model</span><span class="p">,</span> <span class="s1">'_dictionary'</span><span class="p">,</span> <span class="nx">_dictionary</span><span class="p">)</span>
-        <span class="nx">setattr</span><span class="p">(</span><span class="nx">model</span><span class="p">,</span> <span class="s1">'_lda'</span><span class="p">,</span> <span class="nx">_lda</span><span class="p">)</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s1">'_dictionary'</span><span class="p">,</span> <span class="n">_dictionary</span><span class="p">)</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s1">'_lda'</span><span class="p">,</span> <span class="n">_lda</span><span class="p">)</span>
 
-        <span class="nx">setattr</span><span class="p">(</span><span class="nx">model</span><span class="p">,</span> <span class="s1">'_n_components'</span><span class="p">,</span> <span class="nx">model</span><span class="p">.</span><span class="nx">_lda</span><span class="p">.</span><span class="nx">num_topics</span><span class="p">)</span>
-        <span class="nx">shutil</span><span class="p">.</span><span class="nx">rmtree</span><span class="p">(</span><span class="nx">tmpdir</span><span class="p">)</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s1">'_n_components'</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">_lda</span><span class="o">.</span><span class="n">num_topics</span><span class="p">)</span>
+        <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">tmpdir</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="nx">model</span>
+        <span class="k">return</span> <span class="n">model</span>
 </pre></div>
 <!--end_code-->
 </header>
