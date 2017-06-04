@@ -36,7 +36,7 @@ Functionality is exposed using the `VeloxObject` abstract base class (ABC). A su
 
 This allows you to abstract away much of the messiness in bookkeeping.
 
-Here is an example using [`gensim`](https://github.com/RaRe-Technologies/gensim) to build a topic model and keep track of all the necessary ETL-type objects that follow:
+Here is a simple example showing all required components.
 
 <!--begin_code-->
     #!python
@@ -60,6 +60,92 @@ Here is an example using [`gensim`](https://github.com/RaRe-Technologies/gensim)
         def predict(self, X):
             return self._submodel.predict(X)
 <!--end_code-->
+
+
+Here is a full example using [`gensim`](https://github.com/RaRe-Technologies/gensim) to build a topic model and keep track of all the necessary ETL-type objects that follow:
+
+<!--begin_code-->  
+    from gensim.corpora import Dictionary
+    from gensim.models.ldamulticore import LdaMulticore
+    from spacy.en import English
+
+    nlp = English()
+
+
+    @register_model('lda', '0.2.1')
+    class LDAModel(VeloxObject):
+
+        def __init__(self, n_components=50):
+            super(LDAModel, self).__init__()
+
+            self._n_components = n_components
+
+        @staticmethod
+        def tokenize(text):
+            return [t.text.lower() for t in nlp(unicode(text)) if t.text.strip()]
+
+        def fit(self, texts, passes=5, n_workers=1, no_below=5, no_above=0.2):
+            tokenized = map(self.tokenize, texts)
+
+            self._dictionary = Dictionary(tokenized)
+            self._dictionary.filter_extremes(no_below=no_below, no_above=no_above)
+
+            self._lda = LdaMulticore(
+                corpus=map(self._dictionary.doc2bow, tokenized),
+                workers=n_workers,
+                num_topics=self._n_components,
+                id2word=self._dictionary,
+                passes=passes
+            )
+
+            return self
+
+        def transform(self, texts):
+            feats = (self._dictionary.doc2bow(self.tokenize(q)) for q in texts)
+            vecs = list(self._lda[feats])
+
+            X = np.zeros((len(vecs), self._lda.num_topics))
+            for i, v in enumerate(vecs):
+                ix, val = zip(*v)
+                X[i][np.array(ix)] = val
+            return X
+
+        def _save(self, fileobject):
+            with tarfile.open(fileobject.name, 'w:') as tf:
+                with tempfile.NamedTemporaryFile() as tmp:
+                    self._dictionary.save(tmp.name)
+                    tf.add(tmp.name, 'dict.model')
+
+                tmpdir = tempfile.mkdtemp()
+
+                sp = os.path.join(tmpdir, 'lda.model')
+                self._lda.save(sp)
+
+                tf.add(tmpdir, 'lda.dir')
+            print tmpdir
+
+        @classmethod
+        def _load(cls, fileobject):
+
+            tmpdir = tempfile.mkdtemp()
+            with tarfile.open(fileobject.name, 'r:*') as tf:
+                tf.extractall(tmpdir)
+
+            model = cls()
+
+            _dictionary = Dictionary.load(os.path.join(tmpdir, 'dict.model'))
+            _lda = LdaMulticore.load(os.path.join(tmpdir, 'lda.dir', 'lda.model'))
+
+            setattr(model, '_dictionary', _dictionary)
+            setattr(model, '_lda', _lda)
+
+            setattr(model, '_n_components', model._lda.num_topics)
+            shutil.rmtree(tmpdir)
+
+            return model
+
+<!--end_code-->
+
 
 """
 import logging
