@@ -59,11 +59,20 @@ class ChurnModel(VeloxObject):
 Here is a full example using [`gensim`](https://github.com/RaRe-Technologies/gensim) to build a topic model and keep track of all the necessary ETL-type objects that follow:
 
 ```python
+
+
+import os
+import shutil
+import tarfile
+import tempfile
+
 from gensim.corpora import Dictionary
 from gensim.models.ldamulticore import LdaMulticore
 from spacy.en import English
 
+
 nlp = English()
+
 
 @register_model('lda', '0.2.1')
 class LDAModel(VeloxObject):
@@ -75,16 +84,25 @@ class LDAModel(VeloxObject):
 
     @staticmethod
     def tokenize(text):
-        return [t.text.lower() for t in nlp(unicode(text)) if t.text.strip()]
+        return [t.text.lower()
+                for t in nlp(unicode(text))
+                if t.text.strip()]
 
-    def fit(self, texts, passes=5, n_workers=1, no_below=5, no_above=0.2):
+    def fit(self, texts, passes=5, n_workers=1,
+            no_below=5, no_above=0.2):
         tokenized = map(self.tokenize, texts)
 
         self._dictionary = Dictionary(tokenized)
-        self._dictionary.filter_extremes(no_below=no_below, no_above=no_above)
+        self._dictionary.filter_extremes(
+            no_below=no_below,
+            no_above=no_above
+        )
 
         self._lda = LdaMulticore(
-            corpus=map(self._dictionary.doc2bow, tokenized),
+            corpus=map(
+                self._dictionary.doc2bow,
+                tokenized
+            ),
             workers=n_workers,
             num_topics=self._n_components,
             id2word=self._dictionary,
@@ -94,7 +112,10 @@ class LDAModel(VeloxObject):
         return self
 
     def transform(self, texts):
-        feats = (self._dictionary.doc2bow(self.tokenize(q)) for q in texts)
+        feats = (
+            self._dictionary.doc2bow(self.tokenize(q))
+            for q in texts
+        )
         vecs = list(self._lda[feats])
 
         X = np.zeros((len(vecs), self._lda.num_topics))
@@ -115,7 +136,6 @@ class LDAModel(VeloxObject):
             self._lda.save(sp)
 
             tf.add(tmpdir, 'lda.dir')
-        print tmpdir
 
     @classmethod
     def _load(cls, fileobject):
@@ -126,8 +146,12 @@ class LDAModel(VeloxObject):
 
         model = cls()
 
-        _dictionary = Dictionary.load(os.path.join(tmpdir, 'dict.model'))
-        _lda = LdaMulticore.load(os.path.join(tmpdir, 'lda.dir', 'lda.model'))
+        _dictionary = Dictionary.load(
+            os.path.join(tmpdir, 'dict.model')
+        )
+        _lda = LdaMulticore.load(
+            os.path.join(tmpdir, 'lda.dir', 'lda.model')
+        )
 
         setattr(model, '_dictionary', _dictionary)
         setattr(model, '_lda', _lda)
@@ -136,7 +160,21 @@ class LDAModel(VeloxObject):
         shutil.rmtree(tmpdir)
 
         return model
+
 ```
 
+Voilà! Now, let's say you have a list of texts:
+
+
+```python
+
+texts = [...]
+
+lda = LDAModel(128)
+lda.fit(texts)
+
+T = lda.transform(texts)
+
+lda.save('s3://my-ci-bucket/models/foo')
 
 
