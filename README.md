@@ -163,8 +163,8 @@ class LDAModel(VeloxObject):
 
 ```
 
-Voilà! Now, let's say you have a list of texts:
-
+Voilà! Now, let's say you have a list of texts, and you wanted to train this 
+model:
 
 ```python
 
@@ -176,5 +176,34 @@ lda.fit(texts)
 T = lda.transform(texts)
 
 lda.save('s3://my-ci-bucket/models/foo')
+```
+
+Elsewhere, (i.e., a production server, etc.) you can load the latest model like
+so:
+
+```python
+production_lda = LDAModel.load('s3://my-ci-bucket/models/foo')
+T = production_lda.transform(...)
+```
+
+In most environments, we would like the model to get hotswapped when a new model 
+is uploaded to `s3`. Velox makes this easy! As long as the model stays in 
+memory, we can use a async reload process to poll the `prefix` location for
+updated models!
+
+```python
+
+production_lda = LDAModel.load('s3://my-ci-bucket/models/foo')
+production_lda.reload(
+    prefix='s3://my-ci-bucket/models/foo', 
+    scheduled=True, 
+    minutes=5
+)
+
+
+
+T = production_lda.transform(...)
+```
+
 
 

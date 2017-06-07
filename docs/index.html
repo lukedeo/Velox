@@ -1194,7 +1194,8 @@ table {
         <span class="k">return</span> <span class="n">model</span>
 </pre></div>
 <!--end_code-->
-<p>Voilà! Now, let's say you have a list of texts:</p>
+<p>Voilà! Now, let's say you have a list of texts, and you wanted to train this 
+model:</p>
 <!--begin_code-->
 <div class="codehilite"><pre><span></span><span class="n">texts</span> <span class="o">=</span> <span class="p">[</span><span class="o">...</span><span class="p">]</span>
 
@@ -1205,6 +1206,31 @@ table {
 
 <span class="n">lda</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s1">'s3://my-ci-bucket/models/foo'</span><span class="p">)</span>
 </pre></div>
+<!--end_code-->
+<p>Elsewhere, (i.e., a production server, etc.) you can load the latest model like
+so:</p>
+<!--begin_code-->
+<div class="codehilite"><pre><span></span><span class="n">production_lda</span> <span class="o">=</span> <span class="n">LDAModel</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'s3://my-ci-bucket/models/foo'</span><span class="p">)</span>
+<span class="n">T</span> <span class="o">=</span> <span class="n">production_lda</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+</pre></div>
+<!--end_code-->
+<p>In most environments, we would like the model to get hotswapped when a new model 
+is uploaded to <code>s3</code>. Velox makes this easy! As long as the model stays in 
+memory, we can use a async reload process to poll the <code>prefix</code> location for
+updated models!</p>
+<!--begin_code-->
+<div class="codehilite"><pre><span></span><span class="n">production_lda</span> <span class="o">=</span> <span class="n">LDAModel</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'s3://my-ci-bucket/models/foo'</span><span class="p">)</span>
+<span class="n">production_lda</span><span class="o">.</span><span class="n">reload</span><span class="p">(</span>
+    <span class="n">prefix</span><span class="o">=</span><span class="s1">'s3://my-ci-bucket/models/foo'</span><span class="p">,</span> 
+    <span class="n">scheduled</span><span class="o">=</span><span class="bp">True</span><span class="p">,</span> 
+    <span class="n">minutes</span><span class="o">=</span><span class="mi">5</span>
+<span class="p">)</span>
+
+
+
+<span class="n">T</span> <span class="o">=</span> <span class="n">production_lda</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
+</pre></div>
+<!--end_code-->
 </header>
 <section id="section-items">
 <hr/>
