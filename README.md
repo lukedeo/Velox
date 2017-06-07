@@ -4,6 +4,8 @@
 
 # Welcome to Velox!
 
+[![Build Status](https://travis-ci.org/lukedeo/Velox.svg?branch=master)](https://travis-ci.org/lukedeo/Velox)
+
 Deploying and managing live machine learning models is difficult. It involves a mix of handling model versioning, hot-swapping new versions and determining version constraint satisfaction on-the-fly, and managing binary file movement either on a networked or local file system or with a cloud storage system like S3. Velox can handle this for you with a simple base class enforcing opinionated methods of handling the above problems.
 
 Velox provides two main utilities:
