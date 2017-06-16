@@ -1,0 +1,21 @@
+<snippet>
+	<content><![CDATA[
+@register_model('${1/(.*)/\L\1\E/i}'${2/.+/, '/}${2:0.1.0}${2/.+/'/}${3/.+/, '/}${3:>=0.1.0}${3/.+/'/})
+class ${1:DeployedModel}(VeloxObject):
+	${4/.+/"""/}${4:docstring for $1}${4/.+/"""\n/}${4/.+/\t/}def __init__(self${5/([^,])?(.*)/(?1:, )/}${5:arg}):
+		${6:super($1, self).__init__()}
+${5/(\A\s*,\s*\Z)|,?\s*([A-Za-z_][a-zA-Z0-9_]*)\s*(=[^,]*)?(,\s*|$)/(?2:\t\tself._$2 = $2\n)/g}	
+
+	def _save(self, fileobject):
+		${7:# do something with fileobject, access the 
+		# filename with fileobject.name}
+
+	@classmethod
+	def _load(cls, fileobject):
+		${8:# load cls instance with fileobject, access 
+		# the filename with fileobject.name}
+]]></content>
+	<tabTrigger>veloxobject</tabTrigger>
+	<scope>source.python</scope>
+	<description>Velox object builder</description>
+</snippet>
