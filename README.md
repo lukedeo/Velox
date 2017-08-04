@@ -73,6 +73,7 @@ from gensim.corpora import Dictionary
 from gensim.models.ldamulticore import LdaMulticore
 from spacy.en import English
 
+from velox import VeloxObject, register_model
 
 nlp = English()
 
