@@ -1048,7 +1048,8 @@ table {
 <p><img align="right" src="https://github.com/lukedeo/Velox/raw/master/img/velox-logo.png" width="37%"/></p>
 <h1>Welcome to Velox!</h1>
 <p><a href="https://travis-ci.org/lukedeo/Velox"><img alt="Build Status" src="https://travis-ci.org/lukedeo/Velox.svg?branch=master"/></a>
-<a href="https://coveralls.io/github/lukedeo/Velox?branch=master"><img alt="Coverage Status" src="https://coveralls.io/repos/github/lukedeo/Velox/badge.svg?branch=master"/></a></p>
+<a href="https://coveralls.io/github/lukedeo/Velox?branch=master"><img alt="Coverage Status" src="https://coveralls.io/repos/github/lukedeo/Velox/badge.svg?branch=master"/></a>
+<a href="https://badge.fury.io/py/Velox"><img alt="PyPI version" src="https://badge.fury.io/py/Velox.svg"/></a></p>
 <p>Deploying and managing live machine learning models is difficult. It involves a mix of handling model versioning, hot-swapping new versions and determining version constraint satisfaction on-the-fly, and managing binary file movement either on a networked or local file system or with a cloud storage system like S3. Velox can handle this for you with a simple base class enforcing opinionated methods of handling the above problems.</p>
 <p>Velox provides two main utilities:</p>
 <ul>
@@ -1057,10 +1058,12 @@ table {
 </ul>
 <h2>Requirements</h2>
 <hr/>
-<p>Velox currently only supports Python 2.7, but <strong>we would love contributions towards Python 3 support</strong> 😁</p>
+<p>~~Velox currently only supports Python 2.7, but <strong>we would love contributions towards Python 3 support</strong> 😁~~</p>
+<p><strong>Velox supports Python 2 and Python 3</strong></p>
 <p>The main requirements are <code>apscheduler</code> for scheduling hot-swaps, <code>semantic_version</code> for version sanity, and the <code>futures</code> Python 2.7 backport. If you want to be able to work with S3, you'll need <code>boto3</code> (and a valid and properly set up AWS account).</p>
 <p>To run the tests, you'll need the brilliant <code>moto</code> library, the <code>backports.tempfile</code> library for Python 2.7 compatibility, and <code>Keras</code> and <code>sckit-learn</code>.</p>
 <p>For logging, simply grab the Velox logger by the <code>velox</code> handle.</p>
+<p>You can install Velox using <code>pip install velox</code>, </p>
 <h2><code>VeloxObject</code> Abstract Base Class</h2>
 <hr/>
 <p>Functionality is exposed using the <code>VeloxObject</code> abstract base class (ABC). A subclass of a <a href="obj.m.html#velox.obj.VeloxObject"><code>velox.obj.VeloxObject</code></a> needs to implement three things in order for the library to know how to manage it.</p>
@@ -1103,6 +1106,8 @@ table {
 <span class="kn">from</span> <span class="nn">gensim.corpora</span> <span class="kn">import</span> <span class="n">Dictionary</span>
 <span class="kn">from</span> <span class="nn">gensim.models.ldamulticore</span> <span class="kn">import</span> <span class="n">LdaMulticore</span>
 <span class="kn">from</span> <span class="nn">spacy.en</span> <span class="kn">import</span> <span class="n">English</span>
+
+<span class="kn">from</span> <span class="nn">velox</span> <span class="kn">import</span> <span class="n">VeloxObject</span><span class="p">,</span> <span class="n">register_model</span>
 
 
 <span class="n">nlp</span> <span class="o">=</span> <span class="n">English</span><span class="p">()</span>
