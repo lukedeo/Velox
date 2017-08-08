@@ -21,7 +21,8 @@ setup(
     author_email='lukedeo@ldo.io',
     url='https://github.com/lukedeo/Velox',
     license='Apache 2.0',
-    install_requires=['apscheduler', 'boto3', 'semantic_version', 'futures'],
+    install_requires=['apscheduler', 'boto3', 'semantic_version',
+                      'futures', 'future', 'six'],
     packages=find_packages(),
     keywords=('Machine-Learning TensorFlow Deployment Versioning Keras '
               'AWS Deep Learning'),
