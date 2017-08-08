@@ -20,6 +20,7 @@ setup(
     author='Luke de Oliveira',
     author_email='lukedeo@ldo.io',
     url='https://github.com/lukedeo/Velox',
+    download_url='https://github.com/lukedeo/Velox/archive/0.1.0.tar.gz',
     license='Apache 2.0',
     install_requires=['apscheduler', 'boto3', 'semantic_version',
                       'futures', 'future', 'six'],
