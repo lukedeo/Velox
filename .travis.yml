@@ -10,6 +10,10 @@ matrix:
         # - python: 3.6
 before_install:
   - sudo apt-get update
+  # apparently, Trusty from GCP sticks some gunk inside here to smooth out 
+  # stuff with GCP & boto. This is a bit useless in CI. See this issue for 
+  # more details: https://github.com/travis-ci/travis-ci/issues/7940
+  - sudo rm -f /etc/boto.cfg
 install:
   - mkdir ~/.aws && printf "[default]\noutput = json\nregion = us-west-2" > ~/.aws/config
   - export BASE_DIR=$(pwd)
