@@ -15,6 +15,7 @@ import os
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from semantic_version import Version as SemVer, Spec as Specification
+import six
 
 
 from .exceptions import VeloxCreationError, VeloxConstraintError
@@ -296,7 +297,7 @@ class VeloxObject(object):
             logger.debug('current sha: {}'.format(self.current_sha))
             logger.debug('    new sha: {}'.format(replacement.current_sha))
 
-            for k, v in replacement.__dict__.iteritems():
+            for k, v in replacement.__dict__.items():
                 if (k not in {'_scheduler', '_job_pointer'}) and \
                         (not k.startswith('__')):
                     self.__dict__[k] = v
@@ -323,7 +324,7 @@ class VeloxObject(object):
             # self.current_sha)
             self._increment()
 
-        except VeloxConstraintError, ve:
+        except VeloxConstraintError as ve:
             logger.debug('reload skipped. message: {}'.format(ve.args[0]))
 
     def reload(self, prefix=None, specifier=None, scheduled=False,
@@ -513,7 +514,7 @@ class VeloxObject(object):
             logger.debug('matching version requirements: '
                          '{}'.format(cls._version_spec))
 
-            version_identifiers = map(get_semver, filelist)
+            version_identifiers = list(map(get_semver, filelist))
             best_match = cls._version_spec.select(version_identifiers)
             logger.debug('found version to aspire to: {}'.format(best_match))
 
@@ -628,7 +629,7 @@ class register_model(object):
         self._registered_name = registered_name
 
         if version_constraints is not None:
-            if isinstance(version_constraints, basestring):
+            if isinstance(version_constraints, six.string_types):
                 self.version_specification = Specification(version_constraints)
             else:
                 self.version_specification = Specification(*version_constraints)

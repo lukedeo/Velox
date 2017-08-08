@@ -229,10 +229,10 @@ __version__ = '0.1.0'
 
 from .obj import VeloxObject, register_model
 
-import filesystem
-import exceptions
-import tools
-import obj
-import wrapper
+from . import filesystem
+from . import exceptions
+from . import tools
+from . import obj
+from . import wrapper
 
 __all__ = ['filesystem', 'exceptions', 'tools', 'obj', 'wrapper']

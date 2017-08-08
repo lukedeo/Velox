@@ -35,10 +35,10 @@ def test_aware_filepath():
             with pytest.raises(ValueError):
                 with get_aware_filepath(fp, 'w+') as f:
                     f.write('foobar')
-            with get_aware_filepath(fp, 'wb') as f:
+            with get_aware_filepath(fp, 'w') as f:
                 f.write('foobar')
 
-            with get_aware_filepath(fp, 'rb') as f:
+            with get_aware_filepath(fp, 'r') as f:
                 assert f.read() == 'foobar'
 
 
@@ -83,8 +83,8 @@ def test_list_contents():
                   os.path.join(d, 'file-{}.txt')]
 
         for fp in fpaths:
-            for i in xrange(nb_files):
-                with get_aware_filepath(fp.format(i), 'wb') as f:
+            for i in range(nb_files):
+                with get_aware_filepath(fp.format(i), 'w') as f:
                     f.write('foobar-{}'.format(i))
 
         s3match = find_matching_files('s3://{}'.format(TEST_BUCKET),

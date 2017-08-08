@@ -7,11 +7,16 @@ The `velox.tools` submodule provides general support utilities to the Velox
 package.
 """
 
+from __future__ import unicode_literals
+
 import datetime
 from hashlib import md5
+import six
 from threading import Thread
 
 from concurrent.futures import Future
+
+from builtins import bytes
 
 
 def sha(s):
@@ -19,8 +24,8 @@ def sha(s):
     get a simple, potentially value-inconsistent SHA of a python object.
     """
     m = md5()
-    if isinstance(s, basestring):
-        m.update(s)
+    if isinstance(s, six.string_types):
+        m.update(bytes(s, 'utf-8'))
     else:
         m.update(s.__repr__())
     return m.hexdigest()

@@ -247,6 +247,7 @@ def test_version_constraints():
     ModelC = create_class('foobar', version='1.0.0', constraints='>=0.3.0')
 
     with TemporaryDirectory() as d:
+
         ModelA({'foo': 'bar'}).save(prefix=d)
 
         _ = ModelB.load(prefix=d)

@@ -119,7 +119,7 @@ def parse_s3(pth):
 
 
 @contextmanager
-def get_aware_filepath(path, mode='wb', session=None):
+def get_aware_filepath(path, mode='w', session=None):
     """ context handler for dealing with local fs and remote (S3 only...)
 
     Args:
@@ -128,7 +128,7 @@ def get_aware_filepath(path, mode='wb', session=None):
             either `/path/to/desired/file.fmt`, or 
             `s3://myBucketName/this/is/a.key`
 
-    * `mode (str)`: one of {rb, wb}
+    * `mode (str)`: one of {rb, wb, r, w}
 
     * `session (None | boto3.Session)`: can pass in a custom boto3 session 
         if need be
@@ -151,8 +151,8 @@ def get_aware_filepath(path, mode='wb', session=None):
 
     """
 
-    if mode not in {'rb', 'wb'}:
-        raise ValueError('mode must be one of {rb, wb}')
+    if mode not in {'rb', 'wb', 'r', 'w'}:
+        raise ValueError('mode must be one of {rb, wb, r, w}')
 
     if not is_s3_path(path):
         logger.debug('opening file = {} on local fs'.format(path))
@@ -177,7 +177,7 @@ def get_aware_filepath(path, mode='wb', session=None):
         logger.debug('detected bucket = {}, key = {}, mode = {}'.format(
             bucket, key, mode))
 
-        if mode == 'rb':
+        if mode in {'rb', 'r'}:
             logger.debug('initiating download to tempfile')
             S3.Bucket(bucket).download_file(key, temp_fp)
             logger.debug('download to tempfile successful')
@@ -187,7 +187,7 @@ def get_aware_filepath(path, mode='wb', session=None):
             yield f
             logger.debug('closing {}'.format(temp_fp))
 
-        if mode == 'wb':
+        if mode in {'wb', 'w'}:
             logger.debug('uploading {} to bucket = {} with key = {}'.format(
                 temp_fp, bucket, key))
             S3.Bucket(bucket).upload_file(temp_fp, key)
