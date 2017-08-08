@@ -7,7 +7,7 @@ matrix:
         - python: 2.7
         # - python: 3.4
         # - python: 3.5
-        # - python: 3.6
+        - python: 3.6
 before_install:
   - sudo apt-get update
   # apparently, Trusty from GCP sticks some gunk inside here to smooth out 
