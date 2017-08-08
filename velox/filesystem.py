@@ -25,7 +25,7 @@ def find_matching_files(prefix, specifier):
     """
     if not is_s3_path(prefix):
         logger.debug('Searching on filesystem')
-        filelist = sorted(glob(os.path.join(prefix, specifier)))
+        filelist = sorted(glob(os.path.join(os.path.abspath(prefix), specifier)))
     else:
         import boto3
         S3 = boto3.Session().resource('s3')
