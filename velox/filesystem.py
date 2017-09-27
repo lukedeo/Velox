@@ -73,8 +73,8 @@ def ensure_exists(prefix):
 
         bucket, key = parse_s3(prefix)
 
-        logger.info('S3 bucket = {}'.format(bucket))
-        logger.info('S3 key = {}'.format(key))
+        logger.debug('S3 bucket = {}'.format(bucket))
+        logger.debug('S3 key = {}'.format(key))
 
         SESSION = boto3.Session()
 

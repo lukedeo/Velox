@@ -47,8 +47,10 @@ def _fail_bad_init(fn):
     @wraps(fn)
     def _respect_reqs(cls, *args, **kw):
         if not hasattr(cls, '_parent_instantiated'):
-            raise VeloxCreationError('Object of type {} instantiated without '
-                                     'call to constructor of super-class')
+            raise VeloxCreationError(
+                'Object of type {} instantiated without '
+                'call to constructor of super-class'.format(type(cls))
+            )
         return fn(cls, *args, **kw)
 
     _respect_reqs.__doc__ = fn.__doc__
@@ -658,18 +660,16 @@ class register_model(object):
             'savepath'
         }
 
-        logger.info('full: {}'.format(cls.__dict__))
-
         for attr in cls.__dict__:
             fn = getattr(cls, attr)
 
-            logger.info('considering {}'.format(attr))
+            logger.debug('considering {}'.format(attr))
 
             if callable(fn) and inspect.getargspec(fn).args[0] == 'self':
                 if not attr.startswith('_') and attr not in reserved_attr:
 
-                    logger.debug('adding zero-reload downtime for method {}'
-                                 .format(attr))
+                    logger.info('adding zero-reload downtime for method {}'
+                                .format(attr))
 
                     setattr(cls, attr, _fail_bad_init(_zero_downtime(fn)))
 
