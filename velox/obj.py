@@ -243,7 +243,8 @@ class VeloxObject(object):
         return outpath
 
     @classmethod
-    def load(cls, prefix=None, specifier=None, skip_sha=None):
+    def load(cls, prefix=None, specifier=None, skip_sha=None,
+             local_cache_dir=None):
         """
         Loads a managed object instance using the user-defined method defined 
         in `_load`.
@@ -260,6 +261,11 @@ class VeloxObject(object):
         `velox.tools.timestamp`) to explicitly search for.
 
         * `skip_sha (str)`: define a filename SHA1 to skip over.
+
+        * `local_cache_dir (str)`: cache directory to dump a version of the 
+            file from when loading. If the promotory version matches an 
+            identifier in the cache, will load from the cache instead
+
 
 
         Raises:
@@ -281,12 +287,36 @@ class VeloxObject(object):
 
         logger.debug('retrieving from filepath: {}'.format(filepath))
 
+        if local_cache_dir is not None:
+            ensure_exists(local_cache_dir)
+            file_identifier = os.path.basename(filepath)
+
+            local_copy = os.path.join(local_cache_dir, file_identifier)
+
+            if os.path.isfile(local_copy):
+                # if the file we want to load is on the local filesystem, load
+                # from there instead
+                filepath = local_copy
+                logger.info('found target file in local cache. will load {} '
+                            'from local copy'.format(file_identifier))
+            else:
+                logger.info('will dump to {} as cache copy'.format(local_copy))
+
         with get_aware_filepath(filepath, 'rb') as fileobject:
             obj = cls._load(fileobject)
             if not issubclass(type(obj), VeloxObject):
                 raise TypeError('loaded object of type {} must inherit from '
                                 'VeloxObject'.format(cls))
             obj.current_sha = filesha
+
+            if local_cache_dir is not None and not os.path.isfile(local_copy):
+                logger.info('dumping pulled copy to local filesystem')
+                fileobject.seek(0)
+
+                with open(local_copy, 'wb') as fp:
+                    fp.write(fileobject.read())
+
+                logger.info('cache op successful')
 
         return obj
 

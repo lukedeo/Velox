@@ -240,6 +240,56 @@ def test_reloading():
     RESET()
 
 
+def test_local_cache_save_on_load():
+
+    Model = create_class('foobar')
+    import os
+    with TemporaryDirectory() as prefix_dir:
+        with TemporaryDirectory() as cache_dir:
+            m = Model({'foo': 'bar'})
+
+            p = m.save(prefix=prefix_dir)
+
+            _ = Model.load(prefix=prefix_dir, local_cache_dir=cache_dir)
+
+            filename = os.path.basename(p)
+
+            assert os.path.isfile(os.path.join(cache_dir, filename))
+
+    RESET()
+
+
+def test_local_cache_load():
+
+    Model = create_class('foobar')
+    import os
+    with TemporaryDirectory() as prefix_dir:
+        with TemporaryDirectory() as cache_dir:
+            m = Model({'foo': 'bar'})
+            p = m.save(prefix=prefix_dir)
+
+            _ = Model.load(prefix=prefix_dir, local_cache_dir=cache_dir)
+
+            # _ = Model.load(prefix=prefix_dir, local_cache_dir=cache_dir)
+
+            filename = os.path.basename(p)
+
+            # if the load function is trying to load from the cache, this causes an
+            # unpickling error
+            with open(os.path.join(cache_dir, filename), 'w+') as fp:
+                fp.write('0000000000')
+
+            from pickle import UnpicklingError
+
+            with pytest.raises(UnpicklingError):
+                _ = Model.load(prefix=prefix_dir, local_cache_dir=cache_dir)
+
+            # this should be fine
+            _ = Model.load(prefix=prefix_dir)
+
+    RESET()
+
+
 def test_version_constraints():
 
     ModelA = create_class('foobar', version='0.2.1', constraints='<1.0.0')
