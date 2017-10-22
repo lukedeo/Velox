@@ -13,14 +13,14 @@ from setuptools import find_packages
 
 setup(
     name='Velox',
-    version='0.1.1',
+    version='0.2.0',
     description=('Batteries-included tooling for handling promotion, '
                  'versioning, and zero-downtime requirments of Machine '
                  'Learning models in production.'),
     author='Luke de Oliveira',
     author_email='lukedeo@ldo.io',
     url='https://github.com/lukedeo/Velox',
-    download_url='https://github.com/lukedeo/Velox/archive/0.1.1.tar.gz',
+    download_url='https://github.com/lukedeo/Velox/archive/0.2.0.tar.gz',
     license='Apache 2.0',
     install_requires=['apscheduler', 'boto3', 'semantic_version',
                       'futures', 'future', 'six'],
@@ -28,11 +28,13 @@ setup(
     keywords=('Machine-Learning TensorFlow Deployment Versioning Keras '
               'AWS Deep Learning'),
     classifiers=[
-        'Development Status :: 4 - Beta',
+        'Development Status :: 5 - Production/Stable',
         'Intended Audience :: Developers',
         'License :: OSI Approved :: Apache Software License',
         'Programming Language :: Python :: 2',
-        'Programming Language :: Python :: 2.7'
+        'Programming Language :: Python :: 2.7',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.6'
     ],
     extras_require={
         'aws': ['boto3'],
