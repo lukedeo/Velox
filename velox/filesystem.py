@@ -35,10 +35,13 @@ def find_matching_files(prefix, specifier):
         logger.debug('searching in bucket s3://{} with '
                      'pfx key = {}'.format(bucket, key))
 
+        objs_iterator = S3.Bucket(bucket).objects.filter(Prefix=key)
+
         filelist = sorted([
-            obj.key for obj in S3.Bucket(bucket).objects.filter(Prefix=key)
+            os.path.basename(obj.key) for obj in objs_iterator
             if fnmatch.fnmatch(os.path.split(obj.key)[-1], specifier)
         ])
+
     return filelist[::-1]
 
 
