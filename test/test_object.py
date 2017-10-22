@@ -279,9 +279,7 @@ def test_local_cache_load():
             with open(os.path.join(cache_dir, filename), 'w+') as fp:
                 fp.write('0000000000')
 
-            from pickle import UnpicklingError
-
-            with pytest.raises(UnpicklingError):
+            with pytest.raises(Exception):
                 _ = Model.load(prefix=prefix_dir, local_cache_dir=cache_dir)
 
             # this should be fine
