@@ -1,11 +1,11 @@
 
 
-<img src="https://github.com/lukedeo/Velox/raw/master/img/velox-logo.png" width=37% align="right" />
+<img src="https://github.com/vaitech/Velox/raw/master/img/velox-logo.png" width=37% align="right" />
 
 # Welcome to Velox!
 
-[![Build Status](https://travis-ci.org/lukedeo/Velox.svg?branch=master)](https://travis-ci.org/lukedeo/Velox)
-[![Coverage Status](https://coveralls.io/repos/github/lukedeo/Velox/badge.svg?branch=master)](https://coveralls.io/github/lukedeo/Velox?branch=master)
+[![Build Status](https://travis-ci.org/vaitech/Velox.svg?branch=master)](https://travis-ci.org/vaitech/Velox)
+[![Coverage Status](https://coveralls.io/repos/github/vaitech/Velox/badge.svg?branch=master)](https://coveralls.io/github/vaitech/Velox?branch=master)
 [![PyPI version](https://badge.fury.io/py/Velox.svg)](https://badge.fury.io/py/Velox)
 
 Deploying and managing live machine learning models is difficult. It involves a mix of handling model versioning, hot-swapping new versions and determining version constraint satisfaction on-the-fly, and managing binary file movement either on a networked or local file system or with a cloud storage system like S3. Velox can handle this for you with a simple base class enforcing opinionated methods of handling the above problems.
@@ -17,11 +17,9 @@ Velox provides two main utilities:
 
 ## Requirements
 
-~~Velox currently only supports Python 2.7, but **we would love contributions towards Python 3 support** 😁~~
-
 **Velox supports Python 2 and Python 3**
 
-The main requirements are `apscheduler` for scheduling hot-swaps, `semantic_version` for version sanity, and the `futures` Python 2.7 backport. If you want to be able to work with S3, you'll need `boto3` (and a valid and properly set up AWS account).
+The main requirements are `apscheduler` for scheduling hot-swaps, `semantic_version` for version sanity, and the `futures` Python 2.7 backport (when using Python 2). If you want to be able to work with S3, you'll need `boto3` (and a valid and properly set up AWS account).
 
 To run the tests, you'll need the brilliant `moto` library, the `backports.tempfile` library for Python 2.7 compatibility, and `Keras` and `sckit-learn`.
 
