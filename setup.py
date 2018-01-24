@@ -3,7 +3,7 @@
 """
 file: setup.py
 description: setuptools for Velox
-author: Luke de Oliveira (lukedeo@manifold.ai)
+author: Luke de Oliveira (lukedeo@vaitech.io)
 """
 
 import os
@@ -11,16 +11,22 @@ from setuptools import setup
 from setuptools import find_packages
 
 
+from setuptools import setup, find_packages
+import velox
+
+VERSION = velox.__version__
+
 setup(
     name='Velox',
-    version='0.2.0',
+    version=VERSION,
     description=('Batteries-included tooling for handling promotion, '
                  'versioning, and zero-downtime requirments of Machine '
                  'Learning models in production.'),
     author='Luke de Oliveira',
-    author_email='lukedeo@ldo.io',
-    url='https://github.com/lukedeo/Velox',
-    download_url='https://github.com/lukedeo/Velox/archive/0.2.0.tar.gz',
+    author_email='lukedeo@vaitech.io',
+    url='https://github.com/vaitech/Velox',
+    download_url='https://github.com/vaitech/Velox/archive/{}.tar.gz'.format(
+        VERSION),
     license='Apache 2.0',
     install_requires=['apscheduler', 'boto3', 'semantic_version',
                       'futures', 'future', 'six'],

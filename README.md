@@ -5,7 +5,7 @@
 # Welcome to Velox!
 
 [![Build Status](https://travis-ci.org/vaitech/Velox.svg?branch=master)](https://travis-ci.org/vaitech/Velox)
-[![Coverage Status](https://coveralls.io/repos/github/vaitech/Velox/badge.svg?branch=master)](https://coveralls.io/github/vaitech/Velox?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/vaitech/Velox/badge.svg)](https://coveralls.io/github/vaitech/Velox)
 [![PyPI version](https://badge.fury.io/py/Velox.svg)](https://badge.fury.io/py/Velox)
 
 Deploying and managing live machine learning models is difficult. It involves a mix of handling model versioning, hot-swapping new versions and determining version constraint satisfaction on-the-fly, and managing binary file movement either on a networked or local file system or with a cloud storage system like S3. Velox can handle this for you with a simple base class enforcing opinionated methods of handling the above problems.
@@ -19,13 +19,13 @@ Velox provides two main utilities:
 
 **Velox supports Python 2 and Python 3**
 
-The main requirements are `apscheduler` for scheduling hot-swaps, `semantic_version` for version sanity, and the `futures` Python 2.7 backport (when using Python 2). If you want to be able to work with S3, you'll need `boto3` (and a valid and properly set up AWS account).
+The main requirements are `apscheduler` for scheduling hot-swaps, `semantic_version` for version sanity, and the `futures` Python 2.7 backport. If you want to be able to work with S3, you'll need `boto3` (and a valid and properly set up AWS account).
 
 To run the tests, you'll need the brilliant `moto` library, the `backports.tempfile` library for Python 2.7 compatibility, and `Keras` and `sckit-learn`.
 
 For logging, simply grab the Velox logger by the `velox` handle.
 
-You can install Velox using `pip install velox`, 
+You can install Velox using `pip install velox`. For more detailed info, visit our [website](https://vaitech.io/Velox).
 
 ## `VeloxObject` Abstract Base Class
 
