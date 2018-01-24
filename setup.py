@@ -12,9 +12,8 @@ from setuptools import find_packages
 
 
 from setuptools import setup, find_packages
-import velox
 
-VERSION = velox.__version__
+VERSION = '0.2.0'
 
 setup(
     name='Velox',
