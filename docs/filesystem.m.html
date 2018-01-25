@@ -1,15 +1,13 @@
-<!doctype html>
+<!DOCTYPE doctype html>
+
 <head>
-  <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
-
-    <title>velox.filesystem API documentation</title>
-    <meta name="description" content="Velox manages machine learning models in production environments." />
-
-  <link href='https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,300' rel='stylesheet' type='text/css'>
-  <link href="https://fonts.googleapis.com/css?family=PT+Mono" rel="stylesheet" type='text/css'>
-  
-  <style type="text/css">
+<meta content="text/html; charset=utf-8" http-equiv="Content-Type"/>
+<meta content="width=device-width, initial-scale=1, minimum-scale=1" name="viewport"/>
+<title>velox.filesystem API documentation</title>
+<meta content="Velox manages machine learning models in production environments." name="description"/>
+<link href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:400,300" rel="stylesheet" type="text/css"/>
+<link href="https://fonts.googleapis.com/css?family=PT+Mono" rel="stylesheet" type="text/css"/>
+<style type="text/css">
   
 * {
   box-sizing: border-box;
@@ -549,8 +547,7 @@ table {
 }
 
   </style>
-
-  <style type="text/css">
+<style type="text/css">
   
   html, body {
     margin: 0;
@@ -851,8 +848,7 @@ table {
   /*****************************/
 
   </style>
-
-  <style type="text/css">
+<style type="text/css">
   .codehilite .hll { background-color: #ffffcc }
 .codehilite  { background: #f8f8f8; }
 .codehilite .c { color: #408080; font-style: italic } /* Comment */
@@ -923,8 +919,7 @@ table {
 .codehilite .vm { color: #19177C } /* Name.Variable.Magic */
 .codehilite .il { color: #666666 } /* Literal.Number.Integer.Long */
   </style>
-
-  <style type="text/css">
+<style type="text/css">
   
 /* ==========================================================================
    EXAMPLE Media Queries for Responsive Design.
@@ -1016,8 +1011,7 @@ table {
 }
 
   </style>
-
-  <script type="text/javascript">
+<script type="text/javascript">
   function toggle(id, $link) {
     $node = document.getElementById(id);
     if (!$node)
@@ -1034,75 +1028,44 @@ table {
 </head>
 <body>
 <a href="#" id="top">Top</a>
-
 <div id="container">
-    
-  
-  <div id="sidebar">
-    <h2><a href="./index.html">Velox Home</a></h2>
-    <ul id="index">
-
-
-    <li class="set"><h3><a href="#header-functions">Functions</a></h3>
-      
-  <ul>
-    <li class="mono"><a href="#velox.filesystem.ensure_exists">ensure_exists</a></li>
-    <li class="mono"><a href="#velox.filesystem.get_aware_filepath">get_aware_filepath</a></li>
-  </ul>
-
-    </li>
-
-    </ul>
-  </div>
-
-    <article id="content">
-      
-  
-
-  
-
-
-  <header id="section-intro">
-  <h2><a href="/velox.filesystem.ext"><code>velox.filesystem</code></a></h2>
-<p>The <a href="/velox.filesystem.ext"><code>velox.filesystem</code></a> submodule provides support utilities related to 
+<div id="sidebar">
+<h2><a href="./index.html">Velox Home</a></h2>
+<ul id="index">
+<li class="set"><h3><a href="#header-functions">Functions</a></h3>
+<ul>
+<li class="mono"><a href="#velox.filesystem.ensure_exists">ensure_exists</a></li>
+<li class="mono"><a href="#velox.filesystem.get_aware_filepath">get_aware_filepath</a></li>
+</ul>
+</li>
+</ul>
+</div>
+<article id="content">
+<header id="section-intro">
+<h2><a href="./filesystem.m.html#velox.filesystem."><code>velox.filesystem</code></a></h2>
+<p>The <a href="./filesystem.m.html#velox.filesystem."><code>velox.filesystem</code></a> submodule provides support utilities related to 
 managing files (and by extension, S3) to the Velox ecosystem.</p>
-
-  </header>
-
-  <section id="section-items">
-    <h1 class="section-title" id="api-documentation">API Documentation</h1>
-    <hr />
-
-    
-    <h2 class="section-title" id="header-functions">Functions</h2>
-      
-  <div class="item">
-    <div class="name def" id="velox.filesystem.ensure_exists">
-    <p>def <span class="ident">ensure_exists</span>(</p><p>prefix)</p>
-    </div>
-    
-
-    
-  
-    <div class="desc"><p>Safely ensures that the specified <code>prefix</code> exists. If <code>prefix</code> would point
+</header>
+<section id="section-items">
+<h1 class="section-title" id="api-documentation">API Documentation</h1>
+<hr/>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<div class="item">
+<div class="name def" id="velox.filesystem.ensure_exists">
+<p>def <span class="ident">ensure_exists</span>(</p><p>prefix)</p>
+</div>
+<div class="desc"><p>Safely ensures that the specified <code>prefix</code> exists. If <code>prefix</code> would point
 to a location on a reachable file system, it will safely create the 
 necessary directory path respecting race conditions. If <code>prefix</code> would 
 point to S3, it creates the bucket, if one doesn't already exist.</p></div>
-  <div class="source_cont">
+<div class="source_cont">
 </div>
-
-  </div>
-  
-      
-  <div class="item">
-    <div class="name def" id="velox.filesystem.get_aware_filepath">
-    <p>def <span class="ident">get_aware_filepath</span>(</p><p>*args, **kwds)</p>
-    </div>
-    
-
-    
-  
-    <div class="desc"><p>context handler for dealing with local fs and remote (S3 only...)</p>
+</div>
+<div class="item">
+<div class="name def" id="velox.filesystem.get_aware_filepath">
+<p>def <span class="ident">get_aware_filepath</span>(</p><p>*args, **kwds)</p>
+</div>
+<div class="desc"><p>context handler for dealing with local fs and remote (S3 only...)</p>
 <h2>Args:</h2>
 <ul>
 <li>
@@ -1119,39 +1082,31 @@ point to S3, it creates the bucket, if one doesn't already exist.</p></div>
 </li>
 </ul>
 <h2>Example:</h2>
-<div class="codehilite"><pre><span></span><span class="k">with</span> <span class="n">get_aware_filepath</span><span class="p">(</span><span class="s1">&#39;s3://bucket/file.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">&#39;foobar&#39;</span><span class="p">)</span>
+<div class="codehilite"><pre><span></span><span class="k">with</span> <span class="n">get_aware_filepath</span><span class="p">(</span><span class="s1">'s3://bucket/file.txt'</span><span class="p">,</span> <span class="s1">'wb'</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="s1">'foobar'</span><span class="p">)</span>
 
-<span class="k">with</span> <span class="n">get_aware_filepath</span><span class="p">(</span><span class="s1">&#39;s3://bucket/file.txt&#39;</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
-    <span class="k">assert</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;foobar&#39;</span>
+<span class="k">with</span> <span class="n">get_aware_filepath</span><span class="p">(</span><span class="s1">'s3://bucket/file.txt'</span><span class="p">,</span> <span class="s1">'rb'</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="k">assert</span> <span class="n">f</span><span class="o">.</span><span class="n">read</span><span class="p">()</span> <span class="o">==</span> <span class="s1">'foobar'</span>
 </pre></div>
-
-
 <h2>Raises:</h2>
 <ul>
 <li><code>ValueError</code> if <code>mode</code> is not one of the allowed modes.</li>
 </ul></div>
-  <div class="source_cont">
+<div class="source_cont">
 </div>
-
-  </div>
-  
-
-  </section>
-
-    </article>
-  <div class="clear"> </div>
-  <footer id="footer">
-    <p>
+</div>
+</section>
+</article>
+<div class="clear"> </div>
+<footer id="footer">
+<p>
       Documentation generated by
       <a href="https://github.com/BurntSushi/pdoc">pdoc 0.3.2</a>
-    </p>
-
-    <p>pdoc is in the public domain with the
+</p>
+<p>pdoc is in the public domain with the
       <a href="http://unlicense.org">UNLICENSE</a></p>
-
-    <p>Design by <a href="http://nadh.in">Kailash Nadh</a></p>
-  </footer>
+<p>Design by <a href="http://nadh.in">Kailash Nadh</a></p>
+</footer>
 </div>
 </body>
-</html>
+

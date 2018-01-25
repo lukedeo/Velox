@@ -11,6 +11,8 @@ u"""
 [![Coverage Status](https://coveralls.io/repos/github/vaitech/Velox/badge.svg)](https://coveralls.io/github/vaitech/Velox)
 [![PyPI version](https://badge.fury.io/py/Velox.svg)](https://badge.fury.io/py/Velox)
 
+Please join us on [GitHub](https://github.com/vaitech/Velox)!
+
 Deploying and managing live machine learning models is difficult. It involves a mix of handling model versioning, hot-swapping new versions and determining version constraint satisfaction on-the-fly, and managing binary file movement either on a networked or local file system or with a cloud storage system like S3. Velox can handle this for you with a simple base class enforcing opinionated methods of handling the above problems.
 
 Velox provides two main utilities:
