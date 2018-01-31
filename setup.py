@@ -13,7 +13,7 @@ from setuptools import find_packages
 
 from setuptools import setup, find_packages
 
-VERSION = '0.2.0'
+VERSION = '0.2.1'
 
 setup(
     name='Velox',
@@ -45,7 +45,8 @@ setup(
         'aws': ['boto3'],
         'tests': ['numpy', 'pytest', 'pytest-cov', 'pytest-pep8',
                   'pytest-xdist', 'python-coveralls', 'moto', 'keras[h5py]',
-                  'backports.tempfile', 'scikit-learn', 'mock', 'tensorflow'],
+                  'backports.tempfile', 'scikit-learn', 'mock',
+                  'tensorflow<1.5'],
         'docs': ['bs4', 'strif', 'pdoc']
     }
 )
