@@ -3,7 +3,7 @@
 """
 ## `velox.wrapper`
 
-The `velox.wrapper` submodule provides pre-packaged wrappers around Keras 
+The `velox.wrapper` submodule provides pre-packaged wrappers around Keras
 models and around generally pickleable objects in the python ecosystem.
 """
 
@@ -55,7 +55,7 @@ class SimplePickle(VeloxObject):
         try:
             return VeloxObject.__getattr__(self, name)
         except AttributeError:
-            return eval('self._managed_object.{}'.format(name))
+            return getattr(self._managed_object, name)
 
 
 @register_model(registered_name='simple_keras')
@@ -120,4 +120,4 @@ class SimpleKeras(VeloxObject):
         try:
             return VeloxObject.__getattr__(self, name)
         except AttributeError:
-            return eval('self._keras_model.{}'.format(name))
+            return getattr(self._keras_model, name)
