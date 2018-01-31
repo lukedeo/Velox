@@ -213,9 +213,9 @@ def test_reloading():
         o = Model({})
         assert o.current_sha is None
 
-        o.reload(prefix=d, scheduled=True, seconds=2)
+        o.reload(prefix=d, scheduled=True, seconds=0.5)
 
-        time.sleep(3)
+        time.sleep(0.75)
 
         cur_sha = o.current_sha
         assert cur_sha is not None
@@ -223,7 +223,7 @@ def test_reloading():
 
         Model({'foo': 'baz'}).save(prefix=d)
 
-        time.sleep(4)
+        time.sleep(1)
 
         assert cur_sha != o.current_sha
 
@@ -274,8 +274,8 @@ def test_local_cache_load():
 
             filename = os.path.basename(p)
 
-            # if the load function is trying to load from the cache, this causes an
-            # unpickling error
+            # if the load function is trying to load from the cache, this
+            # causes an unpickling error
             with open(os.path.join(cache_dir, filename), 'w+') as fp:
                 fp.write('0000000000')
 
@@ -323,5 +323,24 @@ def test_nothing_to_reload():
         o = Model()
         o.reload(prefix=d, scheduled=True, seconds=1)
         time.sleep(1.2)
+
+    RESET()
+
+
+def test_raises_on_empty_file(tmpdir):
+
+    Model = create_class('foobar')
+    prefix = str(tmpdir.mkdir('sub'))
+
+    Model({'foo': 'bar'}).save(prefix=prefix)
+
+    filename = glob(os.path.join(prefix, '*'))[0]
+
+    # delete the content of the file
+    with open(filename, "w"):
+        pass
+
+    with pytest.raises(VeloxConstraintError):
+        _ = Model.load(prefix=prefix)
 
     RESET()
