@@ -1054,6 +1054,12 @@ table {
 <li class="mono"><a href="#velox.obj.register_model.__init__">__init__</a></li>
 </ul>
 </li>
+<li class="mono">
+<span class="class_name"><a href="#velox.obj.register_object">register_object</a></span>
+<ul>
+<li class="mono"><a href="#velox.obj.register_object.__init__">__init__</a></li>
+</ul>
+</li>
 </ul>
 </li>
 <li class="set"><h3><a href="#header-functions">Functions</a></h3>
@@ -1064,6 +1070,7 @@ table {
 <li class="mono"><a href="#velox.obj.get_registration_name">get_registration_name</a></li>
 <li class="mono"><a href="#velox.obj.get_semver">get_semver</a></li>
 <li class="mono"><a href="#velox.obj.get_specifier">get_specifier</a></li>
+<li class="mono"><a href="#velox.obj.load_velox_object">load_velox_object</a></li>
 </ul>
 </li>
 </ul>
@@ -1071,7 +1078,7 @@ table {
 <article id="content">
 <header id="section-intro">
 <h2><a href="./obj.m.html#velox.obj."><code>velox.obj</code></a></h2>
-<p>The <a href="./obj.m.html#velox.obj."><code>velox.obj</code></a> submodule provides all utilities, functionality, and logic around 
+<p>The <a href="./obj.m.html#velox.obj."><code>velox.obj</code></a> submodule provides all utilities, functionality, and logic around
 the instantiation, maintainence, and lifecycle of all <a href="#velox.obj.VeloxObject"><code>VeloxObject</code></a>
 instances.</p>
 </header>
@@ -1106,8 +1113,8 @@ if it is set, otherwise, we fall back to the current working directory.</p>
 prefix on S3 simply requires <code>s3://bucketName/foo/</code>.</p>
 <p>As an example, we could define the follwing model, inheriting of course from
 <a href="#velox.obj.VeloxObject"><code>VeloxObject</code></a>.</p>
-<div class="codehilite"><pre><span></span><span class="nd">@register_model</span><span class="p">(</span>
-    <span class="n">registered_name</span><span class="o">=</span><span class="s1">'user_model'</span><span class="p">,</span> 
+<div class="codehilite"><pre><span></span><span class="nd">@register_object</span><span class="p">(</span>
+    <span class="n">registered_name</span><span class="o">=</span><span class="s1">'user_model'</span><span class="p">,</span>
     <span class="n">version</span><span class="o">=</span><span class="s1">'1.1.4-alpha'</span><span class="p">,</span>
     <span class="n">version_constraints</span><span class="o">=</span><span class="s1">'&gt;=1.0,&lt;3.0'</span>
 <span class="p">)</span>
@@ -1142,7 +1149,7 @@ loaded. If a file has never been loaded, this will be None.</p></div>
 </div>
 <div class="item">
 <p class="name" id="velox.obj.VeloxObject.registered_name">var <span class="ident">registered_name</span></p>
-<div class="desc"><p>Defines the registered name (i.e., from the <a href="#velox.obj.register_model"><code>register_model</code></a> 
+<div class="desc"><p>Defines the registered name (i.e., from the <a href="#velox.obj.register_object"><code>register_object</code></a>
 decorator) of the class.</p></div>
 <div class="source_cont">
 </div>
@@ -1152,17 +1159,17 @@ decorator) of the class.</p></div>
 <div class="name def" id="velox.obj.VeloxObject.__init__">
 <p>def <span class="ident">__init__</span>(</p><p>self)</p>
 </div>
-<div class="desc"><p>Base constructor for managed objects. </p>
+<div class="desc"><p>Base constructor for managed objects.</p>
 <h2>Raises:</h2>
 <ul>
 <li>
 <p><a href="./exceptions.m.html#velox.exceptions.VeloxCreationError"><code>velox.exceptions.VeloxCreationError</code></a> if any type that inherits from
-    this class fails to invoke this method (i.e., doesn't call 
+    this class fails to invoke this method (i.e., doesn't call
     <code>super(NewModelClass, self).__init__()</code>)</p>
 </li>
 <li>
 <p><a href="./exceptions.m.html#velox.exceptions.VeloxCreationError"><code>velox.exceptions.VeloxCreationError</code></a> if the class is defined without
-    a wrapping call from <a href="#velox.obj.register_model"><code>register_model</code></a>.</p>
+    a wrapping call from <a href="#velox.obj.register_object"><code>register_object</code></a>.</p>
 </li>
 </ul></div>
 <div class="source_cont">
@@ -1172,7 +1179,7 @@ decorator) of the class.</p></div>
 <div class="name def" id="velox.obj.VeloxObject.cancel_scheduled_reload">
 <p>def <span class="ident">cancel_scheduled_reload</span>(</p><p>cls, *args, **kw)</p>
 </div>
-<div class="desc"><p>Cancels a scheduled reload background task started through a call to 
+<div class="desc"><p>Cancels a scheduled reload background task started through a call to
 <a href="#velox.obj.VeloxObject.reload"><code>reload</code></a>.</p>
 <h2>Raises:</h2>
 <ul>
@@ -1193,7 +1200,7 @@ decorator) of the class.</p></div>
 <div class="name def" id="velox.obj.VeloxObject.formatted_filename">
 <p>def <span class="ident">formatted_filename</span>(</p><p>cls, *args, **kw)</p>
 </div>
-<div class="desc"><p>Returns the formatted filename (without prefix) of the class, in the 
+<div class="desc"><p>Returns the formatted filename (without prefix) of the class, in the
 format <code>'{timestamp}_{name}.vx'</code>.</p></div>
 <div class="source_cont">
 </div>
@@ -1202,7 +1209,7 @@ format <code>'{timestamp}_{name}.vx'</code>.</p></div>
 <div class="name def" id="velox.obj.VeloxObject.load">
 <p>def <span class="ident">load</span>(</p><p>cls, prefix=None, specifier=None, skip_sha=None, local_cache_dir=None)</p>
 </div>
-<div class="desc"><p>Loads a managed object instance using the user-defined method defined 
+<div class="desc"><p>Loads a managed object instance using the user-defined method defined
 in <code>_load</code>.</p>
 <h2>Args:</h2>
 <ul>
@@ -1220,16 +1227,16 @@ in <code>_load</code>.</p>
 <p><code>skip_sha (str)</code>: define a filename SHA1 to skip over.</p>
 </li>
 <li>
-<p><code>local_cache_dir (str)</code>: cache directory to dump a version of the 
-    file from when loading. If the promotory version matches an 
+<p><code>local_cache_dir (str)</code>: cache directory to dump a version of the
+    file from when loading. If the promotory version matches an
     identifier in the cache, will load from the cache instead</p>
 </li>
 </ul>
 <h2>Raises:</h2>
 <ul>
-<li><a href="./exceptions.m.html#velox.exceptions.VeloxConstraintError"><code>velox.exceptions.VeloxConstraintError</code></a> if we try to load from a SHA1 
+<li><a href="./exceptions.m.html#velox.exceptions.VeloxConstraintError"><code>velox.exceptions.VeloxConstraintError</code></a> if we try to load from a SHA1
     for which a skip was requested</li>
-<li><code>TypeError</code> if the user-defined <code>_load</code> function loads an object that 
+<li><code>TypeError</code> if the user-defined <code>_load</code> function loads an object that
     does not inherit from <a href="#velox.obj.VeloxObject"><code>VeloxObject</code></a>.</li>
 </ul></div>
 <div class="source_cont">
@@ -1239,28 +1246,28 @@ in <code>_load</code>.</p>
 <div class="name def" id="velox.obj.VeloxObject.loadpath">
 <p>def <span class="ident">loadpath</span>(</p><p>cls, prefix=None, specifier=None)</p>
 </div>
-<div class="desc"><p>Determined the file to load from given the <code>prefix</code>, the <code>specifier</code>, 
-and any version constraint information from <a href="#velox.obj.register_model"><code>register_model</code></a>. 
-Will always return the most recently created file that satisfies all 
+<div class="desc"><p>Determined the file to load from given the <code>prefix</code>, the <code>specifier</code>,
+and any version constraint information from <a href="#velox.obj.register_object"><code>register_object</code></a>.
+Will always return the most recently created file that satisfies all
 constraints.</p>
 <h2>Args:</h2>
 <ul>
 <li>
-<p><code>prefix (str)</code>: the prefix (can be on s3 or on a local filesystem) to 
+<p><code>prefix (str)</code>: the prefix (can be on s3 or on a local filesystem) to
     load a managed object from. If not passed will default to the
     value of the <code>VELOX_ROOT</code> env var if set, else, will fall back to
     the current working directory.</p>
 </li>
 <li>
-<p><code>specifier (str)</code>: any substrings in the timestamp (as generated by 
-<a href="./tools.m.html#velox.tools.timestamp"><code>velox.tools.timestamp</code></a>) to explicitly search for. </p>
+<p><code>specifier (str)</code>: any substrings in the timestamp (as generated by
+<a href="./tools.m.html#velox.tools.timestamp"><code>velox.tools.timestamp</code></a>) to explicitly search for.</p>
 </li>
 </ul>
 <h2>Returns:</h2>
 <p>A full filename where a model can be loaded from.</p>
 <h2>Raises:</h2>
 <ul>
-<li><a href="./exceptions.m.html#velox.exceptions.VeloxConstraintError"><code>velox.exceptions.VeloxConstraintError</code></a> if no matching candidates 
+<li><a href="./exceptions.m.html#velox.exceptions.VeloxConstraintError"><code>velox.exceptions.VeloxConstraintError</code></a> if no matching candidates
     are found from the specified prefix subject to specified constraints.</li>
 </ul></div>
 <div class="source_cont">
@@ -1270,8 +1277,8 @@ constraints.</p>
 <div class="name def" id="velox.obj.VeloxObject.reload">
 <p>def <span class="ident">reload</span>(</p><p>cls, *args, **kw)</p>
 </div>
-<div class="desc"><p>Defines the scheme by which to reload (hot swap) in-place. A scheduled 
-reload can be canceled with a call to 
+<div class="desc"><p>Defines the scheme by which to reload (hot swap) in-place. A scheduled
+reload can be canceled with a call to
 <a href="#velox.obj.VeloxObject.cancel_scheduled_reload"><code>cancel_scheduled_reload</code></a>.</p>
 <h2>Args:</h2>
 <ul>
@@ -1299,7 +1306,7 @@ reload can be canceled with a call to
 </ul>
 <h2>Raises:</h2>
 <ul>
-<li><code>ValueError</code> if you attempt to schedule a reload task when one is 
+<li><code>ValueError</code> if you attempt to schedule a reload task when one is
     already specified</li>
 </ul></div>
 <div class="source_cont">
@@ -1309,11 +1316,11 @@ reload can be canceled with a call to
 <div class="name def" id="velox.obj.VeloxObject.save">
 <p>def <span class="ident">save</span>(</p><p>cls, *args, **kw)</p>
 </div>
-<div class="desc"><p>Saves the managed object instance using the user-defined method defined 
+<div class="desc"><p>Saves the managed object instance using the user-defined method defined
 in <code>_save</code>.</p>
 <h2>Args:</h2>
 <ul>
-<li><code>prefix (str)</code>: the prefix (can be on s3 or on a local filesystem) to 
+<li><code>prefix (str)</code>: the prefix (can be on s3 or on a local filesystem) to
     save the managed object to. If not passed will default to the
     value of the <code>VELOX_ROOT</code> env var if set, else, will fall back to
     the current working directory.</li>
@@ -1325,15 +1332,15 @@ in <code>_save</code>.</p>
 <div class="name def" id="velox.obj.VeloxObject.savepath">
 <p>def <span class="ident">savepath</span>(</p><p>cls, *args, **kw)</p>
 </div>
-<div class="desc"><p>Stitches a prefix and a filename from 
-<a href="#velox.obj.VeloxObject.formatted_filename"><code>formatted_filename</code></a> to form a path to save a model 
+<div class="desc"><p>Stitches a prefix and a filename from
+<a href="#velox.obj.VeloxObject.formatted_filename"><code>formatted_filename</code></a> to form a path to save a model
 to.</p>
 <h2>Args:</h2>
 <ul>
-<li><code>prefix (str)</code>: the prefix (can be on s3 or on a local filesystem) to 
+<li><code>prefix (str)</code>: the prefix (can be on s3 or on a local filesystem) to
     save the managed object to. If not passed will default to the
     value of the <code>VELOX_ROOT</code> env var if set, else, will fall back to
-    the current working directory. </li>
+    the current working directory.</li>
 </ul>
 <h2>Returns:</h2>
 <p>A full filename where a model can be saved to.</p></div>
@@ -1344,13 +1351,58 @@ to.</p>
 </div>
 <div class="item">
 <p class="name" id="velox.obj.register_model">class <span class="ident">register_model</span></p>
-<div class="desc"><p>Wraps the <a href="#velox.obj.VeloxObject"><code>VeloxObject</code></a> subclass definitions to ensure all 
+<div class="source_cont">
+</div>
+<div class="class">
+<h3>Methods</h3>
+<div class="item">
+<div class="name def" id="velox.obj.register_model.__init__">
+<p>def <span class="ident">__init__</span>(</p><p>self, *args, **kwargs)</p>
+</div>
+<p class="inheritance">
+<strong>Inheritance:</strong>
+<code><a href="#velox.obj.register_object">register_object</a></code>.<code><a href="#velox.obj.register_object.__init__">__init__</a></code>
+</p>
+<div class="desc inherited"><p>Decorates an object with the required attributes to be managed by
+Velox. Adds zero-downtime reloading to all non-velox-managed
+functionality.</p>
+<h2>Args:</h2>
+<ul>
+<li><code>registered_name (str)</code>: registration name for the class.</li>
+<li><code>version (str)</code>: a Sem Ver string specifying this classes version.</li>
+<li><code>version_constraints (str | list)</code>: a Sem Ver version constraint
+    string  or list of strings specifying versioning restrictions for
+    loading.</li>
+</ul>
+<h2>Raises:</h2>
+<ul>
+<li>
+<p><code>ValueError</code> if an invalid SemVer string is passed to either the
+    <code>version</code> or <code>version_constraints</code> keyword arguments.</p>
+</li>
+<li>
+<p>(on <code>__call__</code> invocation) <a href="./exceptions.m.html#velox.exceptions.VeloxCreationError"><code>velox.exceptions.VeloxCreationError</code></a> if
+    <code>'{registered_name}_v{version}'</code> is not globally unique.</p>
+</li>
+<li>
+<p>(on <code>__call__</code> invocation) <code>TypeError</code> if the defined class does not
+    inherit from <a href="#velox.obj.VeloxObject"><code>VeloxObject</code></a>.</p>
+</li>
+</ul></div>
+<div class="source_cont">
+</div>
+</div>
+</div>
+</div>
+<div class="item">
+<p class="name" id="velox.obj.register_object">class <span class="ident">register_object</span></p>
+<div class="desc"><p>Wraps the <a href="#velox.obj.VeloxObject"><code>VeloxObject</code></a> subclass definitions to ensure all
 necessary ancillary metadata is added. Allows for versioning and constraint
 definition for reloading procedure.</p>
 <p>For example, we could define the follwing model, inheriting of course from
 <a href="#velox.obj.VeloxObject"><code>VeloxObject</code></a>.</p>
-<div class="codehilite"><pre><span></span><span class="nd">@register_model</span><span class="p">(</span>
-    <span class="n">registered_name</span><span class="o">=</span><span class="s1">'price_model'</span><span class="p">,</span> 
+<div class="codehilite"><pre><span></span><span class="nd">@register_object</span><span class="p">(</span>
+    <span class="n">registered_name</span><span class="o">=</span><span class="s1">'price_model'</span><span class="p">,</span>
     <span class="n">version</span><span class="o">=</span><span class="s1">'0.2.1-rc1'</span><span class="p">,</span>
     <span class="n">version_constraints</span><span class="o">=</span><span class="s1">'&gt;=0.1.0,&lt;0.3.0,!=0.2.0'</span>
 <span class="p">)</span>
@@ -1377,32 +1429,32 @@ definition for reloading procedure.</p>
 <div class="class">
 <h3>Methods</h3>
 <div class="item">
-<div class="name def" id="velox.obj.register_model.__init__">
+<div class="name def" id="velox.obj.register_object.__init__">
 <p>def <span class="ident">__init__</span>(</p><p>self, registered_name, version='0.1.0-alpha', version_constraints=None)</p>
 </div>
-<div class="desc"><p>Decorates an object with the required attributes to be managed by 
+<div class="desc"><p>Decorates an object with the required attributes to be managed by
 Velox. Adds zero-downtime reloading to all non-velox-managed
 functionality.</p>
 <h2>Args:</h2>
 <ul>
 <li><code>registered_name (str)</code>: registration name for the class.</li>
-<li><code>version (str)</code>: a Sem Ver string specifying this classes version. </li>
-<li><code>version_constraints (str | list)</code>: a Sem Ver version constraint 
-    string  or list of strings specifying versioning restrictions for 
+<li><code>version (str)</code>: a Sem Ver string specifying this classes version.</li>
+<li><code>version_constraints (str | list)</code>: a Sem Ver version constraint
+    string  or list of strings specifying versioning restrictions for
     loading.</li>
 </ul>
 <h2>Raises:</h2>
 <ul>
 <li>
-<p><code>ValueError</code> if an invalid SemVer string is passed to either the 
-    <code>version</code> or <code>version_constraints</code> keyword arguments. </p>
+<p><code>ValueError</code> if an invalid SemVer string is passed to either the
+    <code>version</code> or <code>version_constraints</code> keyword arguments.</p>
 </li>
 <li>
-<p>(on <code>__call__</code> invocation) <a href="./exceptions.m.html#velox.exceptions.VeloxCreationError"><code>velox.exceptions.VeloxCreationError</code></a> if 
+<p>(on <code>__call__</code> invocation) <a href="./exceptions.m.html#velox.exceptions.VeloxCreationError"><code>velox.exceptions.VeloxCreationError</code></a> if
     <code>'{registered_name}_v{version}'</code> is not globally unique.</p>
 </li>
 <li>
-<p>(on <code>__call__</code> invocation) <code>TypeError</code> if the defined class does not 
+<p>(on <code>__call__</code> invocation) <code>TypeError</code> if the defined class does not
     inherit from <a href="#velox.obj.VeloxObject"><code>VeloxObject</code></a>.</p>
 </li>
 </ul></div>
@@ -1416,8 +1468,8 @@ functionality.</p>
 <div class="name def" id="velox.obj.available_models">
 <p>def <span class="ident">available_models</span>(</p><p>)</p>
 </div>
-<div class="desc"><p>Get a list of all available models (i.e., those registered with 
-<a href="#velox.obj.register_model"><code>register_model</code></a>)</p></div>
+<div class="desc"><p>Get a list of all available models (i.e., those registered with
+<a href="#velox.obj.register_object"><code>register_object</code></a>)</p></div>
 <div class="source_cont">
 </div>
 </div>
@@ -1441,8 +1493,8 @@ functionality.</p>
 <div class="name def" id="velox.obj.get_registration_name">
 <p>def <span class="ident">get_registration_name</span>(</p><p>filepath)</p>
 </div>
-<div class="desc"><p>Get the name passed to the <code>registered_name</code> keyword argument of the 
-<a href="#velox.obj.register_model"><code>register_model</code></a> decorator.</p></div>
+<div class="desc"><p>Get the name passed to the <code>registered_name</code> keyword argument of the
+<a href="#velox.obj.register_object"><code>register_object</code></a> decorator.</p></div>
 <div class="source_cont">
 </div>
 </div>
@@ -1450,7 +1502,7 @@ functionality.</p>
 <div class="name def" id="velox.obj.get_semver">
 <p>def <span class="ident">get_semver</span>(</p><p>filepath)</p>
 </div>
-<div class="desc"><p>Returns a <code>Version</code> object with the version of the passed-in filename 
+<div class="desc"><p>Returns a <code>Version</code> object with the version of the passed-in filename
 from the <code>semantic_version</code> package.</p></div>
 <div class="source_cont">
 </div>
@@ -1460,6 +1512,54 @@ from the <code>semantic_version</code> package.</p></div>
 <p>def <span class="ident">get_specifier</span>(</p><p>filepath)</p>
 </div>
 <div class="desc"><p>Gets the unique time identifier associated with filename.</p></div>
+<div class="source_cont">
+</div>
+</div>
+<div class="item">
+<div class="name def" id="velox.obj.load_velox_object">
+<p>def <span class="ident">load_velox_object</span>(</p><p>registered_name, prefix=None, specifier=None, version_constraints=None, skip_sha=None, local_cache_dir=None)</p>
+</div>
+<div class="desc"><p>Loads a managed object instance by only specifying a registered name (i.e.,
+what is passed to <code>register_object</code>). Allows methods to dynamically specify
+what model to load.</p>
+<h2>Args:</h2>
+<ul>
+<li>
+<p><code>registered_name (str)</code>: registration name for the class.</p>
+</li>
+<li>
+<p><code>prefix (str)</code>: the prefix (can be on s3 or on a local filesystem) to
+    load a managed object from. If not passed will default to the
+    value of the <code>VELOX_ROOT</code> env var if set, else, will fall back to
+    the current working directory.</p>
+</li>
+<li>
+<p><code>specifier (str)</code>: any substrings in the timestamp (as generated by
+<a href="./tools.m.html#velox.tools.timestamp"><code>velox.tools.timestamp</code></a>) to explicitly search for.</p>
+</li>
+<li>
+<p><code>version_constraints (str | list)</code>: a Sem Ver version constraint
+    string or list of strings specifying versioning restrictions for
+    loading.</p>
+</li>
+<li>
+<p><code>skip_sha (str)</code>: define a filename SHA1 to skip over.</p>
+</li>
+<li>
+<p><code>local_cache_dir (str)</code>: cache directory to dump a version of the
+    file from when loading. If the promotory version matches an
+    identifier in the cache, will load from the cache instead</p>
+</li>
+</ul>
+<h2>Raises:</h2>
+<ul>
+<li><code>RuntimeError</code> if we try to load from a file that was not generated
+    with <code>Velox&gt;0.2.1</code>.</li>
+<li><a href="./exceptions.m.html#velox.exceptions.VeloxConstraintError"><code>velox.exceptions.VeloxConstraintError</code></a> if we try to load from a SHA1
+    for which a skip was requested</li>
+<li><code>TypeError</code> if the user-defined <code>_load</code> function loads an object that
+    does not inherit from <a href="#velox.obj.VeloxObject"><code>VeloxObject</code></a>.</li>
+</ul></div>
 <div class="source_cont">
 </div>
 </div>

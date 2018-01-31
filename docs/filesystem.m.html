@@ -1080,6 +1080,14 @@ point to S3, it creates the bucket, if one doesn't already exist.</p></div>
 <p><code>session (None | boto3.Session)</code>: can pass in a custom boto3 session 
     if need be</p>
 </li>
+<li>
+<p><code>yield_type_hint (bool)</code>: Whether or not to yield any type hints from the 
+    velox metadata. If <code>True</code>, then will yield a tuple.</p>
+</li>
+<li>
+<p><code>delete_on_close (bool)</code>: Whether or not to delete any temporary files 
+    (only used if <code>path</code> is an S3 path.)</p>
+</li>
 </ul>
 <h2>Example:</h2>
 <div class="codehilite"><pre><span></span><span class="k">with</span> <span class="n">get_aware_filepath</span><span class="p">(</span><span class="s1">'s3://bucket/file.txt'</span><span class="p">,</span> <span class="s1">'wb'</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>

@@ -33,7 +33,7 @@ You can install Velox using `pip install velox`. For more detailed info, visit o
 
 Functionality is exposed using the `VeloxObject` abstract base class (ABC). A subclass of a `velox.obj.VeloxObject` needs to implement three things in order for the library to know how to manage it.
 
-* Your class must be defined with a `velox.obj.register_model` decorator around it.
+* Your class must be defined with a `velox.obj.register_object` decorator around it.
 * Your class must implement a `_save` object method that takes as input a file object and does whatever is needed to save the object.
 * Your class must implement a `_load` class method (with the `@classmethod` decorator) that takes as input a file object and reconstructs and returns an instance of your class.
 
@@ -42,7 +42,7 @@ This allows you to abstract away much of the messiness in bookkeeping.
 Here is a simple example showing all required components.
 
 ```python
-@register_model(
+@register_object(
     registered_name='foobar',
     version='0.1.0-alpha',
     version_constraints='>=0.1.0,<0.2.0'
@@ -78,13 +78,13 @@ from gensim.corpora import Dictionary
 from gensim.models.ldamulticore import LdaMulticore
 from spacy.en import English
 
-from velox import VeloxObject, register_model
+from velox import VeloxObject, register_object
 
 
 nlp = English()
 
 
-@register_model('lda', '0.2.1')
+@register_object('lda', '0.2.1')
 class LDAModel(VeloxObject):
 
     def __init__(self, n_components=50):

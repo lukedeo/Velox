@@ -1068,21 +1068,21 @@ table {
 <hr/>
 <p>Functionality is exposed using the <code>VeloxObject</code> abstract base class (ABC). A subclass of a <a href="obj.m.html#velox.obj.VeloxObject"><code>velox.obj.VeloxObject</code></a> needs to implement three things in order for the library to know how to manage it.</p>
 <ul>
-<li>Your class must be defined with a <a href="obj.m.html#velox.obj.register_model"><code>velox.obj.register_model</code></a> decorator around it.</li>
+<li>Your class must be defined with a <a href="obj.m.html#velox.obj.register_object"><code>velox.obj.register_object</code></a> decorator around it.</li>
 <li>Your class must implement a <code>_save</code> object method that takes as input a file object and does whatever is needed to save the object.</li>
 <li>Your class must implement a <code>_load</code> class method (with the <code>@classmethod</code> decorator) that takes as input a file object and reconstructs and returns an instance of your class.</li>
 </ul>
 <p>This allows you to abstract away much of the messiness in bookkeeping.</p>
 <p>Here is a simple example showing all required components.</p>
 <!--begin_code-->
-<div class="codehilite"><pre><span></span><span class="nd">@register_model</span><span class="p">(</span>
+<div class="codehilite"><pre><span></span><span class="nd">@register_object</span><span class="p">(</span>
     <span class="n">registered_name</span><span class="o">=</span><span class="s1">'foobar'</span><span class="p">,</span>
     <span class="n">version</span><span class="o">=</span><span class="s1">'0.1.0-alpha'</span><span class="p">,</span>
     <span class="n">version_constraints</span><span class="o">=</span><span class="s1">'&gt;=0.1.0,&lt;0.2.0'</span>
 <span class="p">)</span>
 <span class="k">class</span> <span class="nc">ChurnModel</span><span class="p">(</span><span class="n">VeloxObject</span><span class="p">):</span>
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">submodel</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">VeloxObject</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">ChurnModel</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_submodel</span> <span class="o">=</span> <span class="n">submodel</span>
 
     <span class="k">def</span> <span class="nf">_save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fileobject</span><span class="p">):</span>
@@ -1107,13 +1107,13 @@ table {
 <span class="kn">from</span> <span class="nn">gensim.models.ldamulticore</span> <span class="kn">import</span> <span class="n">LdaMulticore</span>
 <span class="kn">from</span> <span class="nn">spacy.en</span> <span class="kn">import</span> <span class="n">English</span>
 
-<span class="kn">from</span> <span class="nn">velox</span> <span class="kn">import</span> <span class="n">VeloxObject</span><span class="p">,</span> <span class="n">register_model</span>
+<span class="kn">from</span> <span class="nn">velox</span> <span class="kn">import</span> <span class="n">VeloxObject</span><span class="p">,</span> <span class="n">register_object</span>
 
 
 <span class="n">nlp</span> <span class="o">=</span> <span class="n">English</span><span class="p">()</span>
 
 
-<span class="nd">@register_model</span><span class="p">(</span><span class="s1">'lda'</span><span class="p">,</span> <span class="s1">'0.2.1'</span><span class="p">)</span>
+<span class="nd">@register_object</span><span class="p">(</span><span class="s1">'lda'</span><span class="p">,</span> <span class="s1">'0.2.1'</span><span class="p">)</span>
 <span class="k">class</span> <span class="nc">LDAModel</span><span class="p">(</span><span class="n">VeloxObject</span><span class="p">):</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_components</span><span class="o">=</span><span class="mi">50</span><span class="p">):</span>
