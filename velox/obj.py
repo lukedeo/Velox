@@ -103,7 +103,7 @@ class VeloxObject(object):
     `velox.obj.VeloxObject`.
 
         #!python
-        @register_model(
+        @register_object(
             registered_name='user_model', 
             version='1.1.4-alpha',
             version_constraints='>=1.0,<3.0'
@@ -144,13 +144,13 @@ class VeloxObject(object):
             `super(NewModelClass, self).__init__()`)
 
         * `velox.exceptions.VeloxCreationError` if the class is defined without
-            a wrapping call from `velox.obj.register_model`.
+            a wrapping call from `velox.obj.register_object`.
         """
         if not hasattr(self, '_registered_spec'):
             raise VeloxCreationError(
                 'Managed Velox object instantiation failed due to missing '
                 'registration decorator. The definition of all VeloxObject '
-                'subclasses must be surrounded by the `register_model` '
+                'subclasses must be surrounded by the `register_object` '
                 'decorator. Please consult the documentation for more details.'
             )
         self.__incr_underway = False
@@ -447,7 +447,7 @@ class VeloxObject(object):
     @property
     def registered_name(self):
         """
-        Defines the registered name (i.e., from the `velox.obj.register_model` 
+        Defines the registered name (i.e., from the `velox.obj.register_object` 
         decorator) of the class.
         """
         try:
@@ -499,7 +499,7 @@ class VeloxObject(object):
     def loadpath(cls, prefix=None, specifier=None):
         """
         Determined the file to load from given the `prefix`, the `specifier`, 
-        and any version constraint information from `velox.obj.register_model`. 
+        and any version constraint information from `velox.obj.register_object`. 
         Will always return the most recently created file that satisfies all 
         constraints.
 
@@ -550,7 +550,7 @@ def _zero_downtime(fn):
     return _respect_reload
 
 
-class register_model(object):
+class register_object(object):
 
     """
     Wraps the `velox.obj.VeloxObject` subclass definitions to ensure all 
@@ -561,7 +561,7 @@ class register_model(object):
     `velox.obj.VeloxObject`.
 
         #!python
-        @register_model(
+        @register_object(
             registered_name='price_model', 
             version='0.2.1-rc1',
             version_constraints='>=0.1.0,<0.3.0,!=0.2.0'
@@ -677,7 +677,7 @@ def load_velox_object(registered_name, prefix=None, specifier=None,
                       local_cache_dir=None):
     """
     Loads a managed object instance by only specifying a registered name (i.e., 
-    what is passed to `register_model`). Allows methods to dynamically specify 
+    what is passed to `register_object`). Allows methods to dynamically specify 
     what model to load.
 
     Args:
@@ -779,7 +779,7 @@ def _get_naming_info(filepath):
 def get_registration_name(filepath):
     """
     Get the name passed to the `registered_name` keyword argument of the 
-    `velox.obj.register_model` decorator.
+    `velox.obj.register_object` decorator.
     """
     return _get_naming_info(filepath)[-2]
 
@@ -802,7 +802,7 @@ def get_semver(filepath):
 def available_models():
     """
     Get a list of all available models (i.e., those registered with 
-    `velox.obj.register_model`)
+    `velox.obj.register_object`)
     """
     return VeloxObject._registered_object_names
 

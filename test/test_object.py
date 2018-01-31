@@ -8,7 +8,7 @@ import pickle
 import time
 
 
-from velox import VeloxObject, register_model
+from velox import VeloxObject, register_object
 from velox.exceptions import VeloxCreationError, VeloxConstraintError
 from velox.tools import timestamp
 
@@ -22,7 +22,7 @@ logging.basicConfig(level=logging.DEBUG)
 
 def test_inconsistent_load_type():
 
-    @register_model(registered_name='inconsistent')
+    @register_object(registered_name='inconsistent')
     class InconsistentTypedModel(VeloxObject):
 
         def __init__(self):
@@ -47,7 +47,7 @@ def test_inconsistent_load_type():
 
 def test_missing_super_class_init():
 
-    @register_model(registered_name='missing')
+    @register_object(registered_name='missing')
     class MissingInit(VeloxObject):
 
         def __init__(self):
@@ -69,7 +69,7 @@ def test_missing_super_class_init():
     RESET()
 
 
-@register_model(
+@register_object(
     registered_name='veloxmodel',
     version='0.1.0'
 )
@@ -99,7 +99,7 @@ def test_load_save_self():
 
 
 def create_class(name, version='0.1.0', constraints=None):
-    @register_model(
+    @register_object(
         registered_name=name,
         version=version,
         version_constraints=constraints
