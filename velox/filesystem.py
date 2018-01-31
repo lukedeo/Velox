@@ -15,6 +15,8 @@ import logging
 import os
 from tempfile import mkstemp
 
+from .tools import get_file_meta, obtain_qualified_name
+
 logger = logging.getLogger(__name__)
 
 
@@ -111,10 +113,10 @@ def ensure_exists(prefix):
 
 
 def safe_mkdir(path):
-    '''
+    """
     Safe mkdir (i.e., don't create if already exists, 
-    and no violation of race conditions)
-    '''
+    and no violation of race conditions).
+    """
     try:
         logger.debug('safely making (or skipping) directory: {}'.format(path))
         os.makedirs(path)
@@ -124,10 +126,25 @@ def safe_mkdir(path):
 
 
 def is_s3_path(pth):
+    """Checks if a passed path is an S3 path."""
     return pth.startswith('s3://')
 
 
 def parse_s3(pth):
+    """
+    Args:
+    -----
+    * `pth (str)`: an S3 path, written in the form `s3://bucket/foo.bar`
+
+    Returns:
+    --------
+
+    `Tuple[str]`: A `(bucket, key)` pair for the file.
+
+    Raises:
+    -------
+    * `ValueError` if the passed path is not a valid s3 path
+    """
     if not pth.startswith('s3://'):
         raise ValueError('{} is not a valid s3 path.'.format(pth))
     pth = pth.replace('s3://', '')
@@ -136,8 +153,11 @@ def parse_s3(pth):
     return split[0], os.sep.join(split[1:])
 
 
+# TODO(@lukedeo): Ensure that if things go wrong, we clean up all velox
+# metadata
 @contextmanager
-def get_aware_filepath(path, mode='w', session=None):
+def get_aware_filepath(path, mode='w', session=None, yield_type_hint=False,
+                       delete_on_close=True):
     """ context handler for dealing with local fs and remote (S3 only...)
 
     Args:
@@ -150,6 +170,12 @@ def get_aware_filepath(path, mode='w', session=None):
 
     * `session (None | boto3.Session)`: can pass in a custom boto3 session 
         if need be
+
+    * `yield_type_hint (bool)`: Whether or not to yield any type hints from the 
+        velox metadata. If `True`, then will yield a tuple.
+
+    * `delete_on_close (bool)`: Whether or not to delete any temporary files 
+        (only used if `path` is an S3 path.)
 
     Example:
     --------
@@ -172,14 +198,47 @@ def get_aware_filepath(path, mode='w', session=None):
     if mode not in {'rb', 'wb', 'r', 'w'}:
         raise ValueError('mode must be one of {rb, wb, r, w}')
 
+    binary = 'b' if 'b' in mode else ''
+    read_operation = 'r' in mode
+
     if not is_s3_path(path):
         logger.debug('opening file = {} on local fs'.format(path))
 
+        metadata = None
+        # If we are reading from a file, we want to extract and truncate the
+        # bytes related to the velox type hint before yielding the file so that
+        # whatever operation the user specified is not compromised by extra
+        # bytes. We then want to add the tail bytes back on to the file after
+        # finishing
+        if read_operation:
+            with open(path, 'r{}+'.format(binary)) as pre_opened_file:
+                # extract out the file ending with the type hint, and
+                metadata = get_file_meta(pre_opened_file, truncate=True)
+                if metadata is not None:
+                    logger.debug('found velox metadata in file signature')
+
         with open(path, mode) as f:
-            yield f
+            if not yield_type_hint:
+                yield f
+            else:
+                clsname = None
+                if metadata is not None:
+                    clsname = obtain_qualified_name(metadata)
+                    logger.debug(
+                        'found type hint: {} - yielding as part pf payload'
+                        .format(clsname)
+                    )
+
+                yield (f, clsname)
+
+        # If we read from the truncated file, we want to restore the byte
+        # footer back for the next read
+        if metadata is not None and read_operation:
+            with open(path, 'a' + binary) as post_opened_file:
+                post_opened_file.write(metadata)
+            logger.debug('successfully restored velox metadata')
 
         logger.debug('successfully closed session with file = {}'.format(path))
-
     else:
         if session is None:
             import boto3
@@ -194,25 +253,42 @@ def get_aware_filepath(path, mode='w', session=None):
         logger.debug('detected bucket = {}, key = {}, mode = {}'.format(
             bucket, key, mode))
 
-        if mode in {'rb', 'r'}:
+        if read_operation:
             logger.debug('initiating download to tempfile')
             S3.Bucket(bucket).download_file(key, temp_fp)
             logger.debug('download to tempfile successful')
 
+            with open(temp_fp, 'r{}+'.format(binary)) as pre_opened_file:
+                # extract out the file ending with the type hint, and
+                metadata = get_file_meta(pre_opened_file, truncate=True)
+                if metadata is not None:
+                    logger.info('found velox metadata in file signature')
+
         with open(temp_fp, mode) as f:
             logger.debug('yielding {} with mode {}'.format(temp_fp, mode))
-            yield f
+            if not yield_type_hint:
+                yield f
+            else:
+                clsname = None
+                if metadata is not None:
+                    clsname = obtain_qualified_name(metadata)
+                    logger.debug(
+                        'found type hint: {} - yielding as part pf payload'
+                        .format(clsname)
+                    )
+                yield (f, clsname)
             logger.debug('closing {}'.format(temp_fp))
 
-        if mode in {'wb', 'w'}:
+        if not read_operation:
             logger.debug('uploading {} to bucket = {} with key = {}'.format(
                 temp_fp, bucket, key))
             S3.Bucket(bucket).upload_file(temp_fp, key)
 
-        logger.debug('removing temporary allocations')
-        os.close(fd)
-        os.remove(temp_fp)
+        if delete_on_close:
+            logger.debug('removing temporary allocations')
+            os.close(fd)
+            os.remove(temp_fp)
 
-        logger.debug('cleaned up, releasing')
+            logger.debug('cleaned up, releasing')
 
 __all__ = ['get_aware_filepath', 'ensure_exists']

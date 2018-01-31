@@ -55,7 +55,7 @@ Here is a simple example showing all required components.
     )
     class ChurnModel(VeloxObject):
         def __init__(self, submodel):
-            super(VeloxObject, self).__init__()
+            super(ChurnModel, self).__init__()
             self._submodel = submodel
 
         def _save(self, fileobject):
@@ -234,7 +234,7 @@ logging.getLogger('velox').addHandler(logging.NullHandler())
 
 __version__ = '0.2.1'
 
-from .obj import VeloxObject, register_model
+from .obj import VeloxObject, register_model, load_velox_object
 
 from . import filesystem
 from . import exceptions

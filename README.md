@@ -49,7 +49,7 @@ Here is a simple example showing all required components.
 )
 class ChurnModel(VeloxObject):
     def __init__(self, submodel):
-        super(VeloxObject, self).__init__()
+        super(ChurnModel, self).__init__()
         self._submodel = submodel
 
     def _save(self, fileobject):

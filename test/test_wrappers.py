@@ -4,6 +4,7 @@ from backports.tempfile import TemporaryDirectory
 
 import numpy as np
 from velox.wrapper import SimplePickle, SimpleKeras
+from velox.obj import load_velox_object
 from keras.layers import Dense
 from keras.models import Sequential
 
@@ -35,6 +36,20 @@ def test_simplepickle():
     assert np.allclose(y_orig, model.predict(X_test))
 
 
+def test_load_function_with_wrapper_class():
+    from sklearn.linear_model import SGDRegressor
+
+    X, X_test, y = build_test_data()
+    clf = SGDRegressor(n_iter=20).fit(X, y)
+    y_orig = clf.predict(X_test)
+
+    with TemporaryDirectory() as d:
+        SimplePickle(clf).save(prefix=d)
+        model = load_velox_object('simple_pickle', prefix=d)
+
+    assert np.allclose(y_orig, model.predict(X_test))
+
+
 def test_simplekeras():
 
     X, X_test, y = build_test_data()
@@ -52,7 +67,6 @@ def test_simplekeras():
 
     with TemporaryDirectory() as d:
         SimpleKeras(net).save(prefix=d)
-
         model = SimpleKeras.load(prefix=d)
 
     assert np.allclose(y_orig, model.predict(X_test))

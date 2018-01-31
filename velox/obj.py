@@ -23,7 +23,8 @@ from .exceptions import VeloxCreationError, VeloxConstraintError
 from .filesystem import (find_matching_files, ensure_exists, stitch_filename,
                          get_aware_filepath)
 
-from .tools import abstractclassmethod, timestamp, threaded, sha
+from .tools import (abstractclassmethod, timestamp, threaded, sha, fullname,
+                    import_from_qualified_name, obtain_padding_bytes)
 
 logger = logging.getLogger(__name__)
 
@@ -160,7 +161,7 @@ class VeloxObject(object):
         self._parent_instantiated = True
 
     def __del__(self):
-        if self._scheduler.state:
+        if hasattr(self, '_scheduler') and self._scheduler.state:
             self._scheduler.shutdown()
         if self._increment_underway:
             if not self.__replacement.done():
@@ -239,7 +240,11 @@ class VeloxObject(object):
 
         with get_aware_filepath(outpath, 'wb') as fileobject:
             self._save(fileobject)
-
+            # Make sure we're at the end of the file when we write out the
+            # padding bytes (for example, if the overridden _save method uses
+            # the filename rather than the handle itself)
+            fileobject.seek(0, 2)
+            fileobject.write(obtain_padding_bytes(self))
         return outpath
 
     @classmethod
@@ -302,7 +307,11 @@ class VeloxObject(object):
             else:
                 logger.info('will dump to {} as cache copy'.format(local_copy))
 
-        with get_aware_filepath(filepath, 'rb') as fileobject:
+        with get_aware_filepath(filepath, 'rb', yield_type_hint=True) as \
+                (fileobject, inferred_type):
+            if inferred_type is not None:
+                logger.debug('found inferred_type={}'.format(inferred_type))
+
             obj = cls._load(fileobject)
             if not issubclass(type(obj), VeloxObject):
                 raise TypeError('loaded object of type {} must inherit from '
@@ -518,56 +527,12 @@ class VeloxObject(object):
             are found from the specified prefix subject to specified constraints.
         """
 
-        if prefix is None:
-            prefix = _default_prefix()
-            logger.debug('No prefix specified. Falling back to '
-                         'default at: {}'.format(prefix))
-
-        v = SemVer(cls.__registered_name.split('_')[-1][1:])
-        sortkey = cls.__registered_name.replace(str(v), '*')
-
-        if specifier is None:
-            specifier = '*_{}.vx'.format(sortkey)
-        else:
-            specifier = '*{}*_{}.vx'.format(specifier, sortkey)
-
-        logger.info('Searching for matching file in {} with specifier {}'
-                    .format(prefix, specifier))
-
-        filelist = find_matching_files(prefix, specifier)
-
-        if not filelist:
-            raise VeloxConstraintError(
-                'No files matching pattern {specifier} '
-                'found in {prefix}'.format(specifier=specifier, prefix=prefix)
-            )
-
-        if cls._version_spec is not None:
-            logger.debug('matching version requirements: '
-                         '{}'.format(cls._version_spec))
-
-            version_identifiers = list(map(get_semver, filelist))
-            best_match = cls._version_spec.select(version_identifiers)
-            logger.debug('found version to aspire to: {}'.format(best_match))
-
-            if best_match is None:
-                raise VeloxConstraintError(
-                    'No files matching version requirements {} were '
-                    'found'.format(cls._version_spec)
-                )
-
-            filelist = [
-                fp for fp, v in zip(filelist, version_identifiers)
-                if v == best_match
-            ]
-
-        if len(filelist) > 1:
-            logger.warn('Found {} files matching. Selecting most '
-                        'recent by filename timestamp'.format(len(filelist)))
-
-        logger.info('will load from {}'.format(filelist[0]))
-
-        return stitch_filename(prefix, filelist[0])
+        return _find_best_file(
+            registered_name=get_registration_name(cls.__registered_name),
+            prefix=prefix,
+            specifier=specifier,
+            version_constraints=cls._version_spec
+        )
 
 
 def _zero_downtime(fn):
@@ -664,7 +629,8 @@ class register_model(object):
             if isinstance(version_constraints, six.string_types):
                 self.version_specification = Specification(version_constraints)
             else:
-                self.version_specification = Specification(*version_constraints)
+                self.version_specification = Specification(
+                    *version_constraints)
         else:
             self.version_specification = None
 
@@ -706,6 +672,86 @@ class register_model(object):
         return cls
 
 
+def load_velox_object(registered_name, prefix=None, specifier=None,
+                      version_constraints=None, skip_sha=None,
+                      local_cache_dir=None):
+    """
+    Loads a managed object instance by only specifying a registered name (i.e., 
+    what is passed to `register_model`). Allows methods to dynamically specify 
+    what model to load.
+
+    Args:
+    -----
+
+    * `registered_name (str)`: registration name for the class.
+
+    * `prefix (str)`: the prefix (can be on s3 or on a local filesystem) to
+        load a managed object from. If not passed will default to the
+        value of the `VELOX_ROOT` env var if set, else, will fall back to
+        the current working directory.
+
+    * `specifier (str)`: any substrings in the timestamp (as generated by
+    `velox.tools.timestamp`) to explicitly search for.
+
+    * `version_constraints (str | list)`: a Sem Ver version constraint 
+        string or list of strings specifying versioning restrictions for 
+        loading.
+
+    * `skip_sha (str)`: define a filename SHA1 to skip over.
+
+    * `local_cache_dir (str)`: cache directory to dump a version of the 
+        file from when loading. If the promotory version matches an 
+        identifier in the cache, will load from the cache instead
+
+
+
+    Raises:
+    -------
+
+    * `RuntimeError` if we try to load from a file that was not generated 
+        with `Velox>0.2.1`.
+    * `velox.exceptions.VeloxConstraintError` if we try to load from a SHA1 
+        for which a skip was requested
+    * `TypeError` if the user-defined `_load` function loads an object that 
+        does not inherit from `velox.obj.VeloxObject`.
+
+    """
+    best_file = _find_best_file(
+        registered_name=registered_name,
+        prefix=prefix,
+        specifier=specifier,
+        version_constraints=version_constraints
+    )
+
+    filepath = None
+    with get_aware_filepath(best_file, 'rb', yield_type_hint=True,
+                            delete_on_close=False) as \
+            (f, inferred_type):
+        if inferred_type is None:
+            raise RuntimeError((
+                'Expected type hint in file footer - this seems to be a file '
+                'saved with Velox <= 0.2.1. Please use MyClassName.load(...) '
+                'classmethod, or regenerate the file for Velox > 0.2.1.'
+            ))
+        filepath = f.name
+
+    # make sure we load from the now-defined prefix. In addition, this means
+    # we don't have to redownload any files from S3 :)
+    found_prefix = get_prefix(filepath)
+    found_specifier = get_specifier(filepath)
+
+    # We use the inferred type from the file footer to access the classmethod
+    # to instantiate a new object
+    found_class = import_from_qualified_name(inferred_type)
+
+    return found_class.load(
+        prefix=found_prefix,
+        specifier=found_specifier,
+        skip_sha=skip_sha,
+        local_cache_dir=local_cache_dir
+    )
+
+
 def get_prefix(filepath):
     """
     From a `filepath`, will return the `prefix`
@@ -717,11 +763,17 @@ def get_filename(filepath):
     """
     From a `filepath`, will return the filename **without** the `.vx` extension
     """
-    return os.path.splitext(os.path.split(filepath)[-1])[0]
+    fname = os.path.split(filepath)[-1]
+    if not fname.endswith('.vx'):
+        return fname
+    return os.path.splitext(fname)[0]
 
 
 def _get_naming_info(filepath):
-    return get_filename(filepath).split('_')
+    parts = get_filename(filepath).split('_')
+    if len(parts) > 3:
+        parts = parts[0], '_'.join(parts[1:-1]), parts[-1]
+    return parts
 
 
 def get_registration_name(filepath):
@@ -729,7 +781,7 @@ def get_registration_name(filepath):
     Get the name passed to the `registered_name` keyword argument of the 
     `velox.obj.register_model` decorator.
     """
-    return _get_naming_info(filepath)[1]
+    return _get_naming_info(filepath)[-2]
 
 
 def get_specifier(filepath):
@@ -753,3 +805,100 @@ def available_models():
     `velox.obj.register_model`)
     """
     return VeloxObject._registered_object_names
+
+
+def _find_best_file(registered_name, prefix=None, specifier=None,
+                    version_constraints=None):
+    """
+    Determined the file to load from given the `prefix`, the `specifier`, 
+    any version constraint information, and the `registered_name`. 
+    Will always return the most recently created file that satisfies all 
+    constraints.
+
+    Args:
+    -----
+
+    * `registered_name (str)`: registration name for the class.
+
+    * `prefix (str)`: the prefix (can be on s3 or on a local filesystem) to 
+        load a managed object from. If not passed will default to the
+        value of the `VELOX_ROOT` env var if set, else, will fall back to
+        the current working directory.
+
+    * `specifier (str)`: any substrings in the timestamp (as generated by 
+        `velox.tools.timestamp`) to explicitly search for. 
+
+    * `version_constraints (str | list)`: a Sem Ver version constraint 
+        string  or list of strings specifying versioning restrictions for 
+        loading.
+
+    Returns:
+    --------
+
+    A full filename where a model can be loaded from.
+
+
+    Raises:
+    -------
+
+    * `velox.exceptions.VeloxConstraintError` if no matching candidates 
+        are found from the specified prefix subject to specified constraints.
+    """
+
+    if prefix is None:
+        prefix = _default_prefix()
+        logger.debug('No prefix specified. Falling back to '
+                     'default at: {}'.format(prefix))
+
+    sortkey = registered_name + '*'
+
+    if specifier is None:
+        specifier = '*_{}.vx'.format(sortkey)
+    else:
+        specifier = '*{}*_{}.vx'.format(specifier, sortkey)
+
+    logger.debug('pattern for constraint satisfaction: {}'.format(specifier))
+
+    if version_constraints is not None:
+        if isinstance(version_constraints, six.string_types):
+            version_constraints = Specification(version_constraints)
+        elif not isinstance(version_constraints, Specification):
+            version_constraints = Specification(*version_constraints)
+
+    logger.info('Searching for matching file in {} with specifier {}'
+                .format(prefix, specifier))
+
+    filelist = find_matching_files(prefix, specifier)
+
+    if not filelist:
+        raise VeloxConstraintError(
+            'No files matching pattern {specifier} '
+            'found in {prefix}'.format(specifier=specifier, prefix=prefix)
+        )
+
+    if version_constraints is not None:
+        logger.debug('matching version requirements: '
+                     '{}'.format(version_constraints))
+
+        version_identifiers = list(map(get_semver, filelist))
+        best_match = version_constraints.select(version_identifiers)
+        logger.debug('found version to aspire to: {}'.format(best_match))
+
+        if best_match is None:
+            raise VeloxConstraintError(
+                'No files matching version requirements {} were '
+                'found'.format(version_constraints)
+            )
+
+        filelist = [
+            fp for fp, v in zip(filelist, version_identifiers)
+            if v == best_match
+        ]
+
+    if len(filelist) > 1:
+        logger.warning('Found {} files matching. Selecting most '
+                       'recent by filename timestamp'.format(len(filelist)))
+
+    logger.info('will load from {}'.format(filelist[0]))
+
+    return stitch_filename(prefix, filelist[0])

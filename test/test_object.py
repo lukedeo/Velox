@@ -282,7 +282,7 @@ def test_local_cache_load():
             with pytest.raises(Exception):
                 _ = Model.load(prefix=prefix_dir, local_cache_dir=cache_dir)
 
-            # this should be fine
+            # this should be fine, and should not raise an error
             _ = Model.load(prefix=prefix_dir)
 
     RESET()
