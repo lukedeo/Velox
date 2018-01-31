@@ -234,7 +234,8 @@ logging.getLogger('velox').addHandler(logging.NullHandler())
 
 __version__ = '0.2.1'
 
-from .obj import VeloxObject, register_object, load_velox_object
+from .obj import (VeloxObject, register_object, load_velox_object,
+                  register_object)
 
 from . import filesystem
 from . import exceptions

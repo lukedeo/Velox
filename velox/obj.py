@@ -3,7 +3,7 @@
 """
 ## `velox.obj`
 
-The `velox.obj` submodule provides all utilities, functionality, and logic around 
+The `velox.obj` submodule provides all utilities, functionality, and logic around
 the instantiation, maintainence, and lifecycle of all `velox.obj.VeloxObject`
 instances.
 """
@@ -12,6 +12,7 @@ from abc import ABCMeta, abstractmethod
 import inspect
 import logging
 import os
+import warnings
 
 from apscheduler.schedulers.background import BackgroundScheduler
 from semantic_version import Version as SemVer, Spec as Specification
@@ -40,7 +41,7 @@ def _default_prefix():
 
 def _fail_bad_init(fn):
     """
-    checks to make sure that an invoked objectmethod is invoked on a class 
+    checks to make sure that an invoked objectmethod is invoked on a class
     that has had it's superclass __init__() invoked.
     """
     from functools import wraps
@@ -104,7 +105,7 @@ class VeloxObject(object):
 
         #!python
         @register_object(
-            registered_name='user_model', 
+            registered_name='user_model',
             version='1.1.4-alpha',
             version_constraints='>=1.0,<3.0'
         )
@@ -134,13 +135,13 @@ class VeloxObject(object):
 
     def __init__(self):
         """
-        Base constructor for managed objects. 
+        Base constructor for managed objects.
 
         Raises:
         -------
 
         * `velox.exceptions.VeloxCreationError` if any type that inherits from
-            this class fails to invoke this method (i.e., doesn't call 
+            this class fails to invoke this method (i.e., doesn't call
             `super(NewModelClass, self).__init__()`)
 
         * `velox.exceptions.VeloxCreationError` if the class is defined without
@@ -223,16 +224,16 @@ class VeloxObject(object):
 
     def save(self, prefix=None):
         """
-        Saves the managed object instance using the user-defined method defined 
+        Saves the managed object instance using the user-defined method defined
         in `_save`.
 
         Args:
         -----
 
-        * `prefix (str)`: the prefix (can be on s3 or on a local filesystem) to 
+        * `prefix (str)`: the prefix (can be on s3 or on a local filesystem) to
             save the managed object to. If not passed will default to the
             value of the `VELOX_ROOT` env var if set, else, will fall back to
-            the current working directory. 
+            the current working directory.
         """
 
         outpath = self.savepath(prefix=prefix)
@@ -251,7 +252,7 @@ class VeloxObject(object):
     def load(cls, prefix=None, specifier=None, skip_sha=None,
              local_cache_dir=None):
         """
-        Loads a managed object instance using the user-defined method defined 
+        Loads a managed object instance using the user-defined method defined
         in `_load`.
 
         Args:
@@ -267,8 +268,8 @@ class VeloxObject(object):
 
         * `skip_sha (str)`: define a filename SHA1 to skip over.
 
-        * `local_cache_dir (str)`: cache directory to dump a version of the 
-            file from when loading. If the promotory version matches an 
+        * `local_cache_dir (str)`: cache directory to dump a version of the
+            file from when loading. If the promotory version matches an
             identifier in the cache, will load from the cache instead
 
 
@@ -276,9 +277,9 @@ class VeloxObject(object):
         Raises:
         -------
 
-        * `velox.exceptions.VeloxConstraintError` if we try to load from a SHA1 
+        * `velox.exceptions.VeloxConstraintError` if we try to load from a SHA1
             for which a skip was requested
-        * `TypeError` if the user-defined `_load` function loads an object that 
+        * `TypeError` if the user-defined `_load` function loads an object that
             does not inherit from `velox.obj.VeloxObject`.
 
         """
@@ -371,8 +372,8 @@ class VeloxObject(object):
     def reload(self, prefix=None, specifier=None, scheduled=False,
                **interval_trigger_args):
         """
-        Defines the scheme by which to reload (hot swap) in-place. A scheduled 
-        reload can be canceled with a call to 
+        Defines the scheme by which to reload (hot swap) in-place. A scheduled
+        reload can be canceled with a call to
         `velox.obj.VeloxObject.cancel_scheduled_reload`.
 
         Args:
@@ -398,7 +399,7 @@ class VeloxObject(object):
         Raises:
         -------
 
-        * `ValueError` if you attempt to schedule a reload task when one is 
+        * `ValueError` if you attempt to schedule a reload task when one is
             already specified
         """
 
@@ -427,13 +428,13 @@ class VeloxObject(object):
 
     def cancel_scheduled_reload(self):
         """
-        Cancels a scheduled reload background task started through a call to 
+        Cancels a scheduled reload background task started through a call to
         `velox.obj.VeloxObject.reload`.
 
         Raises:
         -------
 
-        * `ValueError` if no jobs are available to cancel. 
+        * `ValueError` if no jobs are available to cancel.
         """
         if self._job_pointer is None:
             raise ValueError('no available job to cancel.')
@@ -447,7 +448,7 @@ class VeloxObject(object):
     @property
     def registered_name(self):
         """
-        Defines the registered name (i.e., from the `velox.obj.register_object` 
+        Defines the registered name (i.e., from the `velox.obj.register_object`
         decorator) of the class.
         """
         try:
@@ -457,7 +458,7 @@ class VeloxObject(object):
 
     def formatted_filename(self):
         """
-        Returns the formatted filename (without prefix) of the class, in the 
+        Returns the formatted filename (without prefix) of the class, in the
         format `'{timestamp}_{name}.vx'`.
         """
         return '{timestamp}_{name}.vx'.format(
@@ -467,17 +468,17 @@ class VeloxObject(object):
 
     def savepath(self, prefix=None):
         """
-        Stitches a prefix and a filename from 
-        `velox.obj.VeloxObject.formatted_filename` to form a path to save a model 
+        Stitches a prefix and a filename from
+        `velox.obj.VeloxObject.formatted_filename` to form a path to save a model
         to.
 
         Args:
         -----
 
-        * `prefix (str)`: the prefix (can be on s3 or on a local filesystem) to 
+        * `prefix (str)`: the prefix (can be on s3 or on a local filesystem) to
             save the managed object to. If not passed will default to the
             value of the `VELOX_ROOT` env var if set, else, will fall back to
-            the current working directory. 
+            the current working directory.
 
         Returns:
         --------
@@ -498,21 +499,21 @@ class VeloxObject(object):
     @classmethod
     def loadpath(cls, prefix=None, specifier=None):
         """
-        Determined the file to load from given the `prefix`, the `specifier`, 
-        and any version constraint information from `velox.obj.register_object`. 
-        Will always return the most recently created file that satisfies all 
+        Determined the file to load from given the `prefix`, the `specifier`,
+        and any version constraint information from `velox.obj.register_object`.
+        Will always return the most recently created file that satisfies all
         constraints.
 
         Args:
         -----
 
-        * `prefix (str)`: the prefix (can be on s3 or on a local filesystem) to 
+        * `prefix (str)`: the prefix (can be on s3 or on a local filesystem) to
             load a managed object from. If not passed will default to the
             value of the `VELOX_ROOT` env var if set, else, will fall back to
             the current working directory.
 
-        * `specifier (str)`: any substrings in the timestamp (as generated by 
-        `velox.tools.timestamp`) to explicitly search for. 
+        * `specifier (str)`: any substrings in the timestamp (as generated by
+        `velox.tools.timestamp`) to explicitly search for.
 
         Returns:
         --------
@@ -523,7 +524,7 @@ class VeloxObject(object):
         Raises:
         -------
 
-        * `velox.exceptions.VeloxConstraintError` if no matching candidates 
+        * `velox.exceptions.VeloxConstraintError` if no matching candidates
             are found from the specified prefix subject to specified constraints.
         """
 
@@ -553,7 +554,7 @@ def _zero_downtime(fn):
 class register_object(object):
 
     """
-    Wraps the `velox.obj.VeloxObject` subclass definitions to ensure all 
+    Wraps the `velox.obj.VeloxObject` subclass definitions to ensure all
     necessary ancillary metadata is added. Allows for versioning and constraint
     definition for reloading procedure.
 
@@ -562,7 +563,7 @@ class register_object(object):
 
         #!python
         @register_object(
-            registered_name='price_model', 
+            registered_name='price_model',
             version='0.2.1-rc1',
             version_constraints='>=0.1.0,<0.3.0,!=0.2.0'
         )
@@ -587,7 +588,7 @@ class register_object(object):
 
     def __init__(self, registered_name, version='0.1.0-alpha',
                  version_constraints=None):
-        """ Decorates an object with the required attributes to be managed by 
+        """ Decorates an object with the required attributes to be managed by
         Velox. Adds zero-downtime reloading to all non-velox-managed
         functionality.
 
@@ -595,21 +596,21 @@ class register_object(object):
         -----
 
         * `registered_name (str)`: registration name for the class.
-        * `version (str)`: a Sem Ver string specifying this classes version. 
-        * `version_constraints (str | list)`: a Sem Ver version constraint 
-            string  or list of strings specifying versioning restrictions for 
+        * `version (str)`: a Sem Ver string specifying this classes version.
+        * `version_constraints (str | list)`: a Sem Ver version constraint
+            string  or list of strings specifying versioning restrictions for
             loading.
 
         Raises:
         -------
 
-        * `ValueError` if an invalid SemVer string is passed to either the 
-            `version` or `version_constraints` keyword arguments. 
+        * `ValueError` if an invalid SemVer string is passed to either the
+            `version` or `version_constraints` keyword arguments.
 
-        * (on `__call__` invocation) `velox.exceptions.VeloxCreationError` if 
+        * (on `__call__` invocation) `velox.exceptions.VeloxCreationError` if
             `'{registered_name}_v{version}'` is not globally unique.
 
-        * (on `__call__` invocation) `TypeError` if the defined class does not 
+        * (on `__call__` invocation) `TypeError` if the defined class does not
             inherit from `velox.obj.VeloxObject`.
         """
 
@@ -676,8 +677,8 @@ def load_velox_object(registered_name, prefix=None, specifier=None,
                       version_constraints=None, skip_sha=None,
                       local_cache_dir=None):
     """
-    Loads a managed object instance by only specifying a registered name (i.e., 
-    what is passed to `register_object`). Allows methods to dynamically specify 
+    Loads a managed object instance by only specifying a registered name (i.e.,
+    what is passed to `register_object`). Allows methods to dynamically specify
     what model to load.
 
     Args:
@@ -693,14 +694,14 @@ def load_velox_object(registered_name, prefix=None, specifier=None,
     * `specifier (str)`: any substrings in the timestamp (as generated by
     `velox.tools.timestamp`) to explicitly search for.
 
-    * `version_constraints (str | list)`: a Sem Ver version constraint 
-        string or list of strings specifying versioning restrictions for 
+    * `version_constraints (str | list)`: a Sem Ver version constraint
+        string or list of strings specifying versioning restrictions for
         loading.
 
     * `skip_sha (str)`: define a filename SHA1 to skip over.
 
-    * `local_cache_dir (str)`: cache directory to dump a version of the 
-        file from when loading. If the promotory version matches an 
+    * `local_cache_dir (str)`: cache directory to dump a version of the
+        file from when loading. If the promotory version matches an
         identifier in the cache, will load from the cache instead
 
 
@@ -708,11 +709,11 @@ def load_velox_object(registered_name, prefix=None, specifier=None,
     Raises:
     -------
 
-    * `RuntimeError` if we try to load from a file that was not generated 
+    * `RuntimeError` if we try to load from a file that was not generated
         with `Velox>0.2.1`.
-    * `velox.exceptions.VeloxConstraintError` if we try to load from a SHA1 
+    * `velox.exceptions.VeloxConstraintError` if we try to load from a SHA1
         for which a skip was requested
-    * `TypeError` if the user-defined `_load` function loads an object that 
+    * `TypeError` if the user-defined `_load` function loads an object that
         does not inherit from `velox.obj.VeloxObject`.
 
     """
@@ -778,7 +779,7 @@ def _get_naming_info(filepath):
 
 def get_registration_name(filepath):
     """
-    Get the name passed to the `registered_name` keyword argument of the 
+    Get the name passed to the `registered_name` keyword argument of the
     `velox.obj.register_object` decorator.
     """
     return _get_naming_info(filepath)[-2]
@@ -793,7 +794,7 @@ def get_specifier(filepath):
 
 def get_semver(filepath):
     """
-    Returns a `Version` object with the version of the passed-in filename 
+    Returns a `Version` object with the version of the passed-in filename
     from the `semantic_version` package.
     """
     return SemVer(_get_naming_info(filepath)[2][1:])
@@ -801,7 +802,7 @@ def get_semver(filepath):
 
 def available_models():
     """
-    Get a list of all available models (i.e., those registered with 
+    Get a list of all available models (i.e., those registered with
     `velox.obj.register_object`)
     """
     return VeloxObject._registered_object_names
@@ -810,9 +811,9 @@ def available_models():
 def _find_best_file(registered_name, prefix=None, specifier=None,
                     version_constraints=None):
     """
-    Determined the file to load from given the `prefix`, the `specifier`, 
-    any version constraint information, and the `registered_name`. 
-    Will always return the most recently created file that satisfies all 
+    Determined the file to load from given the `prefix`, the `specifier`,
+    any version constraint information, and the `registered_name`.
+    Will always return the most recently created file that satisfies all
     constraints.
 
     Args:
@@ -820,16 +821,16 @@ def _find_best_file(registered_name, prefix=None, specifier=None,
 
     * `registered_name (str)`: registration name for the class.
 
-    * `prefix (str)`: the prefix (can be on s3 or on a local filesystem) to 
+    * `prefix (str)`: the prefix (can be on s3 or on a local filesystem) to
         load a managed object from. If not passed will default to the
         value of the `VELOX_ROOT` env var if set, else, will fall back to
         the current working directory.
 
-    * `specifier (str)`: any substrings in the timestamp (as generated by 
-        `velox.tools.timestamp`) to explicitly search for. 
+    * `specifier (str)`: any substrings in the timestamp (as generated by
+        `velox.tools.timestamp`) to explicitly search for.
 
-    * `version_constraints (str | list)`: a Sem Ver version constraint 
-        string  or list of strings specifying versioning restrictions for 
+    * `version_constraints (str | list)`: a Sem Ver version constraint
+        string  or list of strings specifying versioning restrictions for
         loading.
 
     Returns:
@@ -841,7 +842,7 @@ def _find_best_file(registered_name, prefix=None, specifier=None,
     Raises:
     -------
 
-    * `velox.exceptions.VeloxConstraintError` if no matching candidates 
+    * `velox.exceptions.VeloxConstraintError` if no matching candidates
         are found from the specified prefix subject to specified constraints.
     """
 
@@ -902,3 +903,14 @@ def _find_best_file(registered_name, prefix=None, specifier=None,
     logger.info('will load from {}'.format(filelist[0]))
 
     return stitch_filename(prefix, filelist[0])
+
+
+class register_model(register_object):
+
+    def __init__(self, *args, **kwargs):
+
+        warnings.warn(
+            'register_model has been deprecated in favor of register_object, '
+            'and is scheduled to be removed on April 4th, 2017.'
+        )
+        super(register_model, self).__init__()
