@@ -18,6 +18,14 @@ from tempfile import mkstemp
 logger = logging.getLogger(__name__)
 
 
+def _is_non_zero_file(filepath):
+    """Check for a file of zero size, with some safety w/ race conditions."""
+    try:
+        return os.path.getsize(filepath) > 0
+    except OSError:
+        return False
+
+
 def find_matching_files(prefix, specifier):
     """
     Searches for files matching the `specifier` at the `prefix` location 
@@ -25,7 +33,13 @@ def find_matching_files(prefix, specifier):
     """
     if not is_s3_path(prefix):
         logger.debug('Searching on filesystem')
-        filelist = sorted(glob(os.path.join(os.path.abspath(prefix), specifier)))
+        filelist = sorted(glob(os.path.join(
+            os.path.abspath(prefix),
+            specifier
+        )))
+
+        # make sure we don't have any files that are zero sized
+        filelist = [fp for fp in filelist if _is_non_zero_file(fp)]
     else:
         import boto3
         S3 = boto3.Session().resource('s3')
@@ -39,7 +53,8 @@ def find_matching_files(prefix, specifier):
 
         filelist = sorted([
             os.path.basename(obj.key) for obj in objs_iterator
-            if fnmatch.fnmatch(os.path.split(obj.key)[-1], specifier)
+            if (fnmatch.fnmatch(os.path.split(obj.key)[-1], specifier) and
+                obj.size > 0)  # make sure we don't have zero byte files
         ])
 
     return filelist[::-1]
@@ -166,7 +181,6 @@ def get_aware_filepath(path, mode='w', session=None):
         logger.debug('successfully closed session with file = {}'.format(path))
 
     else:
-
         if session is None:
             import boto3
             session = boto3.Session()
