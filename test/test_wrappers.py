@@ -4,13 +4,15 @@ from backports.tempfile import TemporaryDirectory
 
 import numpy as np
 from velox.wrapper import SimplePickle, SimpleKeras
+from keras.layers import Dense
+from keras.models import Sequential
 
 
 def build_test_data():
 
-    X = np.random.normal(0, 1, (1000, 500))
-    X_test = np.random.normal(0, 1, (1000, 500))
-    y = X.dot([1, 2, 3, 1, 5] * 100)
+    X = np.random.normal(0, 1, (100, 3))
+    X_test = np.random.normal(0, 1, (100, 3))
+    y = X.dot([1, 2, 3])
     y += np.random.normal(0, 5, y.shape)
 
     return X, X_test, y
@@ -35,13 +37,10 @@ def test_simplepickle():
 
 def test_simplekeras():
 
-    from keras.layers import Dense
-    from keras.models import Sequential
-
     X, X_test, y = build_test_data()
 
     net = Sequential([
-        Dense(20, activation='relu', input_dim=500),
+        Dense(20, activation='relu', input_dim=3),
         Dense(1)
     ])
 
