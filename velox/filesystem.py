@@ -156,7 +156,7 @@ def parse_s3(pth):
 # TODO(@lukedeo): Ensure that if things go wrong, we clean up all velox
 # metadata
 @contextmanager
-def get_aware_filepath(path, mode='w', session=None, yield_type_hint=False,
+def get_aware_filepath(path, mode='r', session=None, yield_type_hint=False,
                        delete_on_close=True):
     """ context handler for dealing with local fs and remote (S3 only...)
 
