@@ -52,8 +52,10 @@ def test_aware_filepath_with_type_hint():
     conn.create_bucket(Bucket=TEST_BUCKET)
     x = np.random.normal(0, 1, (10, ))
     with TemporaryDirectory() as d:
-        fpaths = ['s3://{}/file.txt'.format(TEST_BUCKET),
-                  os.path.join(d, 'file.txt')]
+        fpaths = [
+            's3://{}/file.txt'.format(TEST_BUCKET),
+            os.path.join(d, 'file.txt')
+        ]
 
         for fp in fpaths:
             with get_aware_filepath(fp, 'wb') as f:

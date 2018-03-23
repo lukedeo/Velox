@@ -8,7 +8,7 @@ import pickle
 import time
 
 
-from velox import VeloxObject, register_object
+from velox import VeloxObject, register_object, load_velox_object
 from velox.exceptions import VeloxCreationError, VeloxConstraintError
 from velox.tools import timestamp
 
