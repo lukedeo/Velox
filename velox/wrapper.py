@@ -15,7 +15,7 @@ except ImportError:
 from .obj import VeloxObject, register_object, _fail_bad_init, _zero_downtime
 
 
-@register_object(registered_name='simple_pickle')
+@register_object(registered_name='simplepickle')
 class SimplePickle(VeloxObject):
     """ SimplePickle is a passthru wrapper for any pickle-able Python object,
     allowing you to save, load, and swap in a consistent manner.
@@ -58,7 +58,7 @@ class SimplePickle(VeloxObject):
             return getattr(self._managed_object, name)
 
 
-@register_object(registered_name='simple_keras')
+@register_object(registered_name='simplekeras')
 class SimpleKeras(VeloxObject):
     """ SimpleKeras is a passthru wrapper for a keras model, allowing you to
     save, load, and swap in a consistent manner.
