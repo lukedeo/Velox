@@ -726,31 +726,35 @@ def load_velox_object(registered_name, prefix=None, specifier=None,
 
     filepath = None
     with get_aware_filepath(best_file, 'rb', yield_type_hint=True,
-                            delete_on_close=False) as \
-            (f, inferred_type):
+                            delete_on_close=False) as file_meta:
+        f, inferred_type = file_meta
         if inferred_type is None:
             raise RuntimeError((
                 'Expected type hint in file footer - this seems to be a file '
                 'saved with Velox <= 0.2.1. Please use MyClassName.load(...) '
                 'classmethod, or regenerate the file for Velox > 0.2.1.'
             ))
+
+        # At this point, we just need to load this file! It has had it's type
+        # info stripped at this point, but that doens't matter as we'll use the
+        # classmethod to instantiate the class.
         filepath = f.name
 
-    # make sure we load from the now-defined prefix. In addition, this means
-    # we don't have to redownload any files from S3 :)
-    found_prefix = get_prefix(filepath)
-    found_specifier = get_specifier(filepath)
+        # make sure we load from the now-defined prefix. In addition, this
+        # means we don't have to redownload any files from S3.
+        found_prefix = get_prefix(filepath)
+        found_specifier = get_specifier(filepath)
 
-    # We use the inferred type from the file footer to access the classmethod
-    # to instantiate a new object
-    found_class = import_from_qualified_name(inferred_type)
+        # We use the inferred type from the file footer to access the
+        # classmethod to instantiate a new object
+        found_class = import_from_qualified_name(inferred_type)
 
-    return found_class.load(
-        prefix=found_prefix,
-        specifier=found_specifier,
-        skip_sha=skip_sha,
-        local_cache_dir=local_cache_dir
-    )
+        return found_class.load(
+            prefix=found_prefix,
+            specifier=found_specifier,
+            skip_sha=skip_sha,
+            local_cache_dir=local_cache_dir
+        )
 
 
 def get_prefix(filepath):
