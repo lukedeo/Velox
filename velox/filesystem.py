@@ -13,7 +13,9 @@ import fnmatch
 from glob import glob
 import logging
 import os
-from tempfile import mkstemp
+import shutil
+from tempfile import mkstemp, mkdtemp
+from backports.tempfile import TemporaryDirectory
 
 from .tools import get_file_meta, obtain_qualified_name
 
@@ -210,7 +212,16 @@ def get_aware_filepath(path, mode='r', session=None, yield_type_hint=False,
         # whatever operation the user specified is not compromised by extra
         # bytes. We then want to add the tail bytes back on to the file after
         # finishing
+        # if yield_type_hint:
         if read_operation:
+            logger.debug('peforming safe copy to avoid race conditions.')
+            tmpdir = mkdtemp(suffix='tmpdir', prefix='typehint')
+            _, filename = os.path.split(path)
+            tmp_path = os.path.join(tmpdir, filename)
+            shutil.copyfile(src=path, dst=tmp_path)
+            path = tmp_path
+            logger.debug('will now operate on newly allocated file: {}'
+                         .format(path))
             with open(path, 'r{}+'.format(binary)) as pre_opened_file:
                 # extract out the file ending with the type hint, and
                 metadata = get_file_meta(pre_opened_file, truncate=True)
@@ -231,13 +242,11 @@ def get_aware_filepath(path, mode='r', session=None, yield_type_hint=False,
 
                 yield (f, clsname)
 
-        # If we read from the truncated file, we want to restore the byte
-        # footer back for the next read
-        if metadata is not None and read_operation:
-            with open(path, 'a' + binary) as post_opened_file:
-                post_opened_file.write(metadata)
-            logger.debug('successfully restored velox metadata')
-
+        if yield_type_hint:
+            logger.debug('removing temporary allocations under {}'
+                         .format(tmpdir))
+            shutil.rmtree(tmpdir)
+            logger.debug('cleaned up, releasing')
         logger.debug('successfully closed session with file = {}'.format(path))
     else:
         if session is None:
@@ -246,12 +255,16 @@ def get_aware_filepath(path, mode='r', session=None, yield_type_hint=False,
 
         S3 = session.resource('s3')
 
-        fd, temp_fp = mkstemp(suffix='.tmpfile', prefix='s3_tmp', text=False)
+        # fd, temp_fp = mkstemp(suffix='.tmpfile', prefix='s3_tmp', text=False)
+        temp_dir = mkdtemp(suffix='tmpfile', prefix='s3_tmp')
 
         bucket, key = parse_s3(path)
 
         logger.debug('detected bucket = {}, key = {}, mode = {}'.format(
             bucket, key, mode))
+
+        _, filename = os.path.split(key)
+        temp_fp = os.path.join(temp_dir, filename)
 
         if read_operation:
             logger.debug('initiating download to tempfile')
@@ -286,9 +299,7 @@ def get_aware_filepath(path, mode='r', session=None, yield_type_hint=False,
 
         if delete_on_close:
             logger.debug('removing temporary allocations')
-            os.close(fd)
-            os.remove(temp_fp)
-
+            shutil.rmtree(temp_dir)
             logger.debug('cleaned up, releasing')
 
 __all__ = ['get_aware_filepath', 'ensure_exists']
