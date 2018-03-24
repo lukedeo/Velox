@@ -15,7 +15,6 @@ import logging
 import os
 import shutil
 from tempfile import mkstemp, mkdtemp
-from backports.tempfile import TemporaryDirectory
 
 from .tools import get_file_meta, obtain_qualified_name
 
