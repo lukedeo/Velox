@@ -27,7 +27,7 @@ setup(
     download_url='https://github.com/vaitech/Velox/archive/{}.tar.gz'.format(
         VERSION),
     license='Apache 2.0',
-    install_requires=['apscheduler', 'boto3', 'semantic_version',
+    install_requires=['apscheduler', 'semantic_version',
                       'futures', 'future', 'six'],
     packages=find_packages(),
     keywords=('Machine-Learning TensorFlow Deployment Versioning Keras '
