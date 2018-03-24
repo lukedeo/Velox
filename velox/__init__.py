@@ -232,7 +232,7 @@ import logging
 # supress "No handlers could be found for logger XXXXX" error
 logging.getLogger('velox').addHandler(logging.NullHandler())
 
-__version__ = '0.3.0'
+__version__ = '0.3.1'
 
 from .obj import (VeloxObject, register_object, load_velox_object,
                   register_object)
