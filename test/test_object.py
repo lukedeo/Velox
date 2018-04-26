@@ -201,11 +201,9 @@ def test_basic_saving_loading():
 
 
 def test_reloading():
-
     Model = create_class('foobar')
 
     with TemporaryDirectory() as d:
-
         m = Model({'foo': 'bar'})
 
         p = m.save(prefix=d)
@@ -241,7 +239,7 @@ def test_reloading():
 
 
 def test_local_cache_save_on_load():
-
+    RESET()
     Model = create_class('foobar')
     import os
     with TemporaryDirectory() as prefix_dir:
