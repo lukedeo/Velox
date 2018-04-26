@@ -359,15 +359,17 @@ class VeloxObject(object):
         return newobj
 
     def __reload(self, prefix, specifier):
-        self.__incr_underway = True
 
+        self.__incr_underway = True
         try:
-            self.__replacement = self.__load_async(prefix, specifier, None)
-            # self.current_sha)
+            self.__replacement = self.__load_async(prefix, specifier,
+                                                   self.current_sha)
             self._increment()
 
         except VeloxConstraintError as ve:
             logger.debug('reload skipped. message: {}'.format(ve.args[0]))
+            self.__replacement = None
+            self.__incr_underway = False
 
     def reload(self, prefix=None, specifier=None, scheduled=False,
                **interval_trigger_args):
