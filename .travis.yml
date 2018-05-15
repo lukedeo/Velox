@@ -5,9 +5,13 @@ cache: pip
 matrix:
     include:
         - python: 2.7
-        # - python: 3.4
-        # - python: 3.5
+          env: MODE=unit
+        - python: 3.5
+          env: MODE=unit
         - python: 3.6
+          env: MODE=unit
+        - python: 3.6
+          env: MODE=pep8
 before_install:
   - sudo apt-get update
   # apparently, Trusty from GCP sticks some gunk inside here to smooth out 
@@ -23,7 +27,10 @@ install:
   
 # command to run tests
 script:
-  - PYTHONPATH=$(pwd) py.test --pep8 -m pep8
-  - PYTHONPATH=$(pwd) py.test test/
+  - if [[ "$MODE" == "pep8" ]]; then
+      PYTHONPATH=$PWD:$PYTHONPATH py.test --pep8 -m pep8 ;
+    else
+      PYTHONPATH=$PWD:$PYTHONPATH py.test test/ ;
+    fi
 after_success:
   - coveralls
