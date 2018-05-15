@@ -728,7 +728,7 @@ def load_velox_object(registered_name, prefix=None, specifier=None,
 
     filepath = None
     with get_aware_filepath(best_file, 'rb', yield_type_hint=True,
-                            delete_on_close=False) as file_meta:
+                            delete_on_close=True) as file_meta:
         f, inferred_type = file_meta
         if inferred_type is None:
             raise RuntimeError((
@@ -751,12 +751,12 @@ def load_velox_object(registered_name, prefix=None, specifier=None,
         # classmethod to instantiate a new object
         found_class = import_from_qualified_name(inferred_type)
 
-        return found_class.load(
-            prefix=found_prefix,
-            specifier=found_specifier,
-            skip_sha=skip_sha,
-            local_cache_dir=local_cache_dir
-        )
+    return found_class.load(
+        prefix=prefix,
+        specifier=found_specifier,
+        skip_sha=skip_sha,
+        local_cache_dir=local_cache_dir
+    )
 
 
 def get_prefix(filepath):
