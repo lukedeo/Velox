@@ -7,10 +7,7 @@ The `velox.wrapper` submodule provides pre-packaged wrappers around Keras
 models and around generally pickleable objects in the python ecosystem.
 """
 
-try:
-    import cPickle as pickle
-except ImportError:
-    import pickle
+import dill
 
 from .obj import VeloxObject, register_object, _fail_bad_init, _zero_downtime
 
@@ -43,11 +40,11 @@ class SimplePickle(VeloxObject):
         self._managed_object = managed_object
 
     def _save(self, fileobject):
-        pickle.dump(self, fileobject)
+        dill.dump(self, fileobject)
 
     @classmethod
     def _load(cls, fileobject):
-        return pickle.load(fileobject)
+        return dill.load(fileobject)
 
     @_fail_bad_init
     @_zero_downtime
