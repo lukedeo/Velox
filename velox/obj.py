@@ -15,6 +15,7 @@ import os
 import warnings
 
 from apscheduler.schedulers.background import BackgroundScheduler
+import decorator
 from semantic_version import Version as SemVer, Spec as Specification
 import six
 
@@ -39,30 +40,25 @@ def _default_prefix():
     return vroot
 
 
-def _fail_bad_init(fn):
+@decorator.decorator
+def _fail_bad_init(fn, *args, **kwargs):
     """
     checks to make sure that an invoked objectmethod is invoked on a class
     that has had it's superclass __init__() invoked.
     """
-    from functools import wraps
-
-    @wraps(fn)
-    def _respect_reqs(cls, *args, **kw):
-        if not hasattr(cls, '_parent_instantiated'):
-            raise VeloxCreationError(
-                'Object of type {} instantiated without '
-                'call to constructor of super-class'.format(type(cls))
-            )
-        return fn(cls, *args, **kw)
-
-    _respect_reqs.__doc__ = fn.__doc__
-    return _respect_reqs
+    logger.warning('checking for function: {}'.format(fn))
+    if not hasattr(args[0], '_parent_instantiated'):
+        raise VeloxCreationError(
+            'Object of type {} instantiated without '
+            'call to constructor of super-class'.format(type(args[0]))
+        )
+    return fn(*args, **kwargs)
 
 
 def _ensure_init(exclude):
     def decorate(cls):
         for attr in cls.__dict__:
-            if callable(getattr(cls, attr)) and attr not in exclude:
+            if hasattr(getattr(cls, attr), '__call__') and attr not in exclude:
                 setattr(cls, attr, _fail_bad_init(getattr(cls, attr)))
         return cls
     return decorate
@@ -70,7 +66,8 @@ def _ensure_init(exclude):
 
 @_ensure_init(
     exclude=['__init__', 'load', '_load', '__del__', '__getstate__',
-             '__setstate__', 'loadpath', 'clear_registered_names'],
+             '__setstate__', 'loadpath', 'clear_registered_names',
+             '__metaclass__'],
 )
 class VeloxObject(object):
     """ `velox.obj.VeloxObject` provides a simple consistent way to handle saving,
@@ -222,6 +219,7 @@ class VeloxObject(object):
     def _load(cls, fileobject):
         raise NotImplementedError('super-class de-serialization not allowed')
 
+    @_fail_bad_init
     def save(self, prefix=None):
         """
         Saves the managed object instance using the user-defined method defined
@@ -538,19 +536,14 @@ class VeloxObject(object):
         )
 
 
-def _zero_downtime(fn):
-    from functools import wraps
-
-    @wraps(fn)
-    def _respect_reload(cls, *args, **kw):
-        if cls._needs_increment:
-            logger.info('model version increment needed')
-            cls._increment()
-        # else:
-        return fn(cls, *args, **kw)
-
-    _respect_reload.__doc__ = fn.__doc__
-    return _respect_reload
+@decorator.decorator
+def _zero_downtime(fn, *args, **kwargs):
+    if args:
+        slf = args[0]
+    if hasattr(slf, '_needs_increment') and slf._needs_increment:
+        logger.info('model version increment needed')
+        slf._increment()
+    return fn(*args, **kwargs)
 
 
 class register_object(object):
@@ -663,8 +656,8 @@ class register_object(object):
             fn = getattr(cls, attr)
 
             logger.debug('considering {}'.format(attr))
-
-            if callable(fn) and inspect.getargspec(fn).args[0] == 'self':
+            if callable(fn) and inspect.getargspec(fn).args and \
+                    inspect.getargspec(fn).args[0] == 'self':
                 if not attr.startswith('_') and attr not in reserved_attr:
 
                     logger.info('adding zero-reload downtime for method {}'
@@ -909,14 +902,3 @@ def _find_best_file(registered_name, prefix=None, specifier=None,
     logger.info('will load from {}'.format(filelist[0]))
 
     return stitch_filename(prefix, filelist[0])
-
-
-class register_model(register_object):
-
-    def __init__(self, *args, **kwargs):
-
-        warnings.warn(
-            'register_model has been deprecated in favor of register_object, '
-            'and is scheduled to be removed on April 4th, 2017.'
-        )
-        super(register_model, self).__init__()
