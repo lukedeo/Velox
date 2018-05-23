@@ -5,7 +5,7 @@ file: fix_links.py
 description: fix idiotic links from pdoc
 author: Luke de Oliveira (lukedeo@vaitech.io)
 """
-
+from __future__ import print_function
 import re
 import argparse
 
@@ -22,7 +22,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     for input_page in args.files:
-        print 'Processing file: {}'.format(input_page)
+        print('Processing file: {}'.format(input_page))
         with atomic_output_file(input_page) as overwritten_page:
             with open(input_page) as orig:
                 text = re.sub(
