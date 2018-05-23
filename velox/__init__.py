@@ -15,10 +15,11 @@ Please join us on [GitHub](https://github.com/vaitech/Velox)!
 
 Deploying and managing live machine learning models is difficult. It involves a mix of handling model versioning, hot-swapping new versions and determining version constraint satisfaction on-the-fly, and managing binary file movement either on a networked or local file system or with a cloud storage system like S3. Velox can handle this for you with a simple base class enforcing opinionated methods of handling the above problems.
 
-Velox provides two main utilities:
+Velox provides three main utilities:
 
 * Velox abstracts the messiness of consistent naming schemes and handling saving and loading requirements for a filesystem and for other forms of storage.
 * Velox allows the ability to do a model / blob hotswap in-place for a new binary version.
+* A single entry point (`load_velox_object(...)`) to be able to load any object in any environment in a completely parameterized, runtime-dependent manner.
 
 ## Requirements
 ---
@@ -48,25 +49,35 @@ Here is a simple example showing all required components.
 
 <!--begin_code-->
     #!python
+    import dill
+    from sklearn.linear_model import SGDClassifier
+    from sklearn.pipeline import make_pipeline
+    from velox import register_object, VeloxObject
+
     @register_object(
-        registered_name='foobar',
-        version='0.1.0-alpha',
+        registered_name='textclassifier',
+        version='0.1.1-rc',
         version_constraints='>=0.1.0,<0.2.0'
     )
-    class ChurnModel(VeloxObject):
-        def __init__(self, submodel):
-            super(ChurnModel, self).__init__()
-            self._submodel = submodel
+    class TextClf(VeloxObject):
+        def __init__(self):
+            super(TextClf, self).__init__()
+            self._model = make_pipeline(TfidfVectorizer(), SGDClassifier())
 
         def _save(self, fileobject):
-            pickle.dump(self, fileobject)
+            dill.dump(self._model, fileobject)
 
         @classmethod
         def _load(cls, fileobject):
-            return pickle.load(fileobject)
+            obj = cls()
+            setattr(obj, '_model', dill.load(fileobject))
+            return obj
 
-        def predict(self, X):
-            return self._submodel.predict(X)
+        def predict(self, texts):
+            return self._model.predict(texts)
+        
+        def fit(self, texts, labels):
+            return self._model.fit(texts, labels)
 <!--end_code-->
 
 
@@ -96,14 +107,15 @@ Here is a full example using [`gensim`](https://github.com/RaRe-Technologies/gen
 
         def __init__(self, n_components=50):
             super(LDAModel, self).__init__()
-
             self._n_components = n_components
 
         @staticmethod
         def tokenize(text):
-            return [t.text.lower()
-                    for t in nlp(unicode(text))
-                    if t.text.strip()]
+            return [
+                t.text.lower()
+                for t in nlp(unicode(text))
+                if t.text.strip()
+            ]
 
         def fit(self, texts, passes=5, n_workers=1,
                 no_below=5, no_above=0.2):
@@ -180,7 +192,7 @@ Here is a full example using [`gensim`](https://github.com/RaRe-Technologies/gen
 
 <!--end_code-->
 
-Voilà! Now, let's say you have a list of texts, and you wanted to train this 
+Voilà! Now, let's say you have a list of strings, and you wanted to train this 
 model:
 
 <!--begin_code-->
@@ -205,9 +217,9 @@ so:
     T = production_lda.transform(...)
 <!--end_code-->
 
-In most environments, we would like the model to get hotswapped when a new model 
+In many environments, we would like the model to get hotswapped when a new model 
 is uploaded to `s3`. Velox makes this easy! As long as the model stays in 
-memory, we can use a async reload process to poll the `prefix` location for
+memory, we can use a async reload thread to poll the `prefix` location for
 updated models!
 
 <!--begin_code-->
@@ -225,7 +237,7 @@ updated models!
     T = production_lda.transform(...)
 <!--end_code-->
 
-
+Velox manages many components of principled serialization and blob versioning / management in a framework agnostic way. Our vision is to provide a simple, common interface for models from any framework, be it PyTorch, Keras, TensorFlow, Scikit-learn, or any other.
 """
 import logging
 
