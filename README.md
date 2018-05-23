@@ -16,7 +16,7 @@ Velox provides three main utilities:
 
 * Velox abstracts the messiness of consistent naming schemes and handling saving and loading requirements for a filesystem and for other forms of storage.
 * Velox allows the ability to do a model / blob hotswap in-place for a new binary version.
-* A single entry point (`load_velox_object(...)`) to be able to load any object in any environment in a completely parameterized, runtime-dependent manner.
+* A single entry point (`velox.obj.load_velox_object`) to be able to load any object in any environment in a completely parameterized, runtime-dependent manner.
 
 ## Requirements
 
