@@ -75,7 +75,7 @@ Here is a simple example showing all required components.
 
         def predict(self, texts):
             return self._model.predict(texts)
-        
+
         def fit(self, texts, labels):
             return self._model.fit(texts, labels)
 <!--end_code-->

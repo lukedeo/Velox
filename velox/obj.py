@@ -9,13 +9,13 @@ instances.
 """
 
 from abc import ABCMeta, abstractmethod
+from functools import wraps
 import inspect
 import logging
 import os
 import warnings
 
 from apscheduler.schedulers.background import BackgroundScheduler
-import decorator
 from semantic_version import Version as SemVer, Spec as Specification
 import six
 
@@ -40,25 +40,35 @@ def _default_prefix():
     return vroot
 
 
-@decorator.decorator
-def _fail_bad_init(fn, *args, **kwargs):
+def _fail_bad_init(fn):
     """
     checks to make sure that an invoked objectmethod is invoked on a class
     that has had it's superclass __init__() invoked.
     """
-    logger.warning('checking for function: {}'.format(fn))
-    if not hasattr(args[0], '_parent_instantiated'):
-        raise VeloxCreationError(
-            'Object of type {} instantiated without '
-            'call to constructor of super-class'.format(type(args[0]))
-        )
-    return fn(*args, **kwargs)
+
+    @wraps(fn)
+    def wrapped(self, *args, **kwargs):
+        if not hasattr(self, '_parent_instantiated'):
+            raise VeloxCreationError(
+                'Object of type {} instantiated without '
+                'call to constructor of super-class'.format(type(self))
+            )
+        return fn(self, *args, **kwargs)
+
+    # Setting the signature attribute has only been supported since py3.3.
+    # N.B. one must build the docs in Python 3 so they don't just
+    # show *args, **kwargs everywhere :)
+    if six.PY3:
+        argspec = inspect.getargspec(fn)
+        args = inspect.formatargspec(*argspec)
+        wrapped.__signature__ = inspect.signature(fn)
+    return wrapped
 
 
 def _ensure_init(exclude):
     def decorate(cls):
         for attr in cls.__dict__:
-            if hasattr(getattr(cls, attr), '__call__') and attr not in exclude:
+            if callable(getattr(cls, attr)) and attr not in exclude:
                 setattr(cls, attr, _fail_bad_init(getattr(cls, attr)))
         return cls
     return decorate
@@ -536,14 +546,21 @@ class VeloxObject(object):
         )
 
 
-@decorator.decorator
-def _zero_downtime(fn, *args, **kwargs):
-    if args:
-        slf = args[0]
-    if hasattr(slf, '_needs_increment') and slf._needs_increment:
-        logger.info('model version increment needed')
-        slf._increment()
-    return fn(*args, **kwargs)
+def _zero_downtime(fn):
+    @wraps(fn)
+    def wrapped(*args, **kwargs):
+        if args:
+            slf = args[0]
+        if hasattr(slf, '_needs_increment') and slf._needs_increment:
+            logger.info('model version increment needed')
+            slf._increment()
+        return fn(*args, **kwargs)
+
+    if six.PY3:
+        argspec = inspect.getargspec(fn)
+        args = inspect.formatargspec(*argspec)
+        wrapped.__signature__ = inspect.signature(fn)
+    return wrapped
 
 
 class register_object(object):
