@@ -1052,10 +1052,11 @@ table {
 <a href="https://badge.fury.io/py/Velox"><img alt="PyPI version" src="https://badge.fury.io/py/Velox.svg"/></a></p>
 <p>Please join us on <a href="https://github.com/vaitech/Velox">GitHub</a>!</p>
 <p>Deploying and managing live machine learning models is difficult. It involves a mix of handling model versioning, hot-swapping new versions and determining version constraint satisfaction on-the-fly, and managing binary file movement either on a networked or local file system or with a cloud storage system like S3. Velox can handle this for you with a simple base class enforcing opinionated methods of handling the above problems.</p>
-<p>Velox provides two main utilities:</p>
+<p>Velox provides three main utilities:</p>
 <ul>
 <li>Velox abstracts the messiness of consistent naming schemes and handling saving and loading requirements for a filesystem and for other forms of storage.</li>
 <li>Velox allows the ability to do a model / blob hotswap in-place for a new binary version.</li>
+<li>A single entry point (<a href="obj.m.html#velox.obj.load_velox_object"><code>velox.obj.load_velox_object</code></a>) to be able to load any object in any environment in a completely parameterized, runtime-dependent manner.</li>
 </ul>
 <h2>Requirements</h2>
 <hr/>
@@ -1075,25 +1076,35 @@ table {
 <p>This allows you to abstract away much of the messiness in bookkeeping.</p>
 <p>Here is a simple example showing all required components.</p>
 <!--begin_code-->
-<div class="codehilite"><pre><span></span><span class="nd">@register_object</span><span class="p">(</span>
-    <span class="n">registered_name</span><span class="o">=</span><span class="s1">'foobar'</span><span class="p">,</span>
-    <span class="n">version</span><span class="o">=</span><span class="s1">'0.1.0-alpha'</span><span class="p">,</span>
+<div class="codehilite"><pre><span></span><span class="kn">import</span> <span class="nn">dill</span>
+<span class="kn">from</span> <span class="nn">sklearn.linear_model</span> <span class="kn">import</span> <span class="n">SGDClassifier</span>
+<span class="kn">from</span> <span class="nn">sklearn.pipeline</span> <span class="kn">import</span> <span class="n">make_pipeline</span>
+<span class="kn">from</span> <span class="nn">velox</span> <span class="kn">import</span> <span class="n">register_object</span><span class="p">,</span> <span class="n">VeloxObject</span>
+
+<span class="nd">@register_object</span><span class="p">(</span>
+    <span class="n">registered_name</span><span class="o">=</span><span class="s1">'textclassifier'</span><span class="p">,</span>
+    <span class="n">version</span><span class="o">=</span><span class="s1">'0.1.1-rc'</span><span class="p">,</span>
     <span class="n">version_constraints</span><span class="o">=</span><span class="s1">'&gt;=0.1.0,&lt;0.2.0'</span>
 <span class="p">)</span>
-<span class="k">class</span> <span class="nc">ChurnModel</span><span class="p">(</span><span class="n">VeloxObject</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">submodel</span><span class="p">):</span>
-        <span class="nb">super</span><span class="p">(</span><span class="n">ChurnModel</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_submodel</span> <span class="o">=</span> <span class="n">submodel</span>
+<span class="k">class</span> <span class="nc">TextClf</span><span class="p">(</span><span class="n">VeloxObject</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">TextClf</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_model</span> <span class="o">=</span> <span class="n">make_pipeline</span><span class="p">(</span><span class="n">TfidfVectorizer</span><span class="p">(),</span> <span class="n">SGDClassifier</span><span class="p">())</span>
 
     <span class="k">def</span> <span class="nf">_save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fileobject</span><span class="p">):</span>
-        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fileobject</span><span class="p">)</span>
+        <span class="n">dill</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="p">,</span> <span class="n">fileobject</span><span class="p">)</span>
 
     <span class="nd">@classmethod</span>
     <span class="k">def</span> <span class="nf">_load</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">fileobject</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">fileobject</span><span class="p">)</span>
+        <span class="n">obj</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">()</span>
+        <span class="nb">setattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s1">'_model'</span><span class="p">,</span> <span class="n">dill</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">fileobject</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">obj</span>
 
-    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">X</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_submodel</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">X</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">predict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">texts</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">texts</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">texts</span><span class="p">,</span> <span class="n">labels</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">texts</span><span class="p">,</span> <span class="n">labels</span><span class="p">)</span>
 </pre></div>
 <!--end_code-->
 <p>Here is a full example using <a href="https://github.com/RaRe-Technologies/gensim"><code>gensim</code></a> to build a topic model and keep track of all the necessary ETL-type objects that follow:</p>
@@ -1118,14 +1129,15 @@ table {
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_components</span><span class="o">=</span><span class="mi">50</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">(</span><span class="n">LDAModel</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-
         <span class="bp">self</span><span class="o">.</span><span class="n">_n_components</span> <span class="o">=</span> <span class="n">n_components</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">tokenize</span><span class="p">(</span><span class="n">text</span><span class="p">):</span>
-        <span class="k">return</span> <span class="p">[</span><span class="n">t</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
-                <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">nlp</span><span class="p">(</span><span class="nb">unicode</span><span class="p">(</span><span class="n">text</span><span class="p">))</span>
-                <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()]</span>
+        <span class="k">return</span> <span class="p">[</span>
+            <span class="n">t</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">nlp</span><span class="p">(</span><span class="nb">unicode</span><span class="p">(</span><span class="n">text</span><span class="p">))</span>
+            <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+        <span class="p">]</span>
 
     <span class="k">def</span> <span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">texts</span><span class="p">,</span> <span class="n">passes</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">n_workers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
             <span class="n">no_below</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">no_above</span><span class="o">=</span><span class="mf">0.2</span><span class="p">):</span>
@@ -1201,7 +1213,7 @@ table {
         <span class="k">return</span> <span class="n">model</span>
 </pre></div>
 <!--end_code-->
-<p>Voilà! Now, let's say you have a list of texts, and you wanted to train this 
+<p>Voilà! Now, let's say you have a list of strings, and you wanted to train this 
 model:</p>
 <!--begin_code-->
 <div class="codehilite"><pre><span></span><span class="n">texts</span> <span class="o">=</span> <span class="p">[</span><span class="o">...</span><span class="p">]</span>
@@ -1221,9 +1233,9 @@ so:</p>
 <span class="n">T</span> <span class="o">=</span> <span class="n">production_lda</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
 </pre></div>
 <!--end_code-->
-<p>In most environments, we would like the model to get hotswapped when a new model 
+<p>In many environments, we would like the model to get hotswapped when a new model 
 is uploaded to <code>s3</code>. Velox makes this easy! As long as the model stays in 
-memory, we can use a async reload process to poll the <code>prefix</code> location for
+memory, we can use a async reload thread to poll the <code>prefix</code> location for
 updated models!</p>
 <!--begin_code-->
 <div class="codehilite"><pre><span></span><span class="n">production_lda</span> <span class="o">=</span> <span class="n">LDAModel</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s1">'s3://my-ci-bucket/models/foo'</span><span class="p">)</span>
@@ -1238,6 +1250,7 @@ updated models!</p>
 <span class="n">T</span> <span class="o">=</span> <span class="n">production_lda</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="o">...</span><span class="p">)</span>
 </pre></div>
 <!--end_code-->
+<p>Velox manages many components of principled serialization and blob versioning / management in a framework agnostic way. Our vision is to provide a simple, common interface for models from any framework, be it PyTorch, Keras, TensorFlow, Scikit-learn, or any other.</p>
 </header>
 <section id="section-items">
 <hr/>

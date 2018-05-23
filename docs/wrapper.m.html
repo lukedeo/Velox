@@ -1039,13 +1039,13 @@ table {
 <ul>
 <li class="mono"><a href="#velox.wrapper.SimpleKeras.__init__">__init__</a></li>
 <li class="mono"><a href="#velox.wrapper.SimpleKeras.cancel_scheduled_reload">cancel_scheduled_reload</a></li>
-<li class="mono"><a href="#velox.wrapper.SimpleKeras.clear_registered_names">clear_registered_names</a></li>
 <li class="mono"><a href="#velox.wrapper.SimpleKeras.formatted_filename">formatted_filename</a></li>
-<li class="mono"><a href="#velox.wrapper.SimpleKeras.load">load</a></li>
-<li class="mono"><a href="#velox.wrapper.SimpleKeras.loadpath">loadpath</a></li>
 <li class="mono"><a href="#velox.wrapper.SimpleKeras.reload">reload</a></li>
 <li class="mono"><a href="#velox.wrapper.SimpleKeras.save">save</a></li>
 <li class="mono"><a href="#velox.wrapper.SimpleKeras.savepath">savepath</a></li>
+<li class="mono"><a href="#velox.wrapper.SimpleKeras.clear_registered_names">clear_registered_names</a></li>
+<li class="mono"><a href="#velox.wrapper.SimpleKeras.load">load</a></li>
+<li class="mono"><a href="#velox.wrapper.SimpleKeras.loadpath">loadpath</a></li>
 </ul>
 </li>
 <li class="mono">
@@ -1053,13 +1053,13 @@ table {
 <ul>
 <li class="mono"><a href="#velox.wrapper.SimplePickle.__init__">__init__</a></li>
 <li class="mono"><a href="#velox.wrapper.SimplePickle.cancel_scheduled_reload">cancel_scheduled_reload</a></li>
-<li class="mono"><a href="#velox.wrapper.SimplePickle.clear_registered_names">clear_registered_names</a></li>
 <li class="mono"><a href="#velox.wrapper.SimplePickle.formatted_filename">formatted_filename</a></li>
-<li class="mono"><a href="#velox.wrapper.SimplePickle.load">load</a></li>
-<li class="mono"><a href="#velox.wrapper.SimplePickle.loadpath">loadpath</a></li>
 <li class="mono"><a href="#velox.wrapper.SimplePickle.reload">reload</a></li>
 <li class="mono"><a href="#velox.wrapper.SimplePickle.save">save</a></li>
 <li class="mono"><a href="#velox.wrapper.SimplePickle.savepath">savepath</a></li>
+<li class="mono"><a href="#velox.wrapper.SimplePickle.clear_registered_names">clear_registered_names</a></li>
+<li class="mono"><a href="#velox.wrapper.SimplePickle.load">load</a></li>
+<li class="mono"><a href="#velox.wrapper.SimplePickle.loadpath">loadpath</a></li>
 </ul>
 </li>
 </ul>
@@ -1104,6 +1104,123 @@ attribute normally.</p>
 <div class="source_cont">
 </div>
 <div class="class">
+<h3>Static methods</h3>
+<div class="item">
+<div class="name def" id="velox.wrapper.SimpleKeras.__init__">
+<p>def <span class="ident">__init__</span>(</p><p>self, keras_model=None)</p>
+</div>
+<div class="desc"><p>Base constructor for managed objects.</p>
+<h2>Raises:</h2>
+<ul>
+<li>
+<p><a href="./exceptions.m.html#velox.exceptions.VeloxCreationError"><code>velox.exceptions.VeloxCreationError</code></a> if any type that inherits from
+    this class fails to invoke this method (i.e., doesn't call
+    <code>super(NewModelClass, self).__init__()</code>)</p>
+</li>
+<li>
+<p><a href="./exceptions.m.html#velox.exceptions.VeloxCreationError"><code>velox.exceptions.VeloxCreationError</code></a> if the class is defined without
+    a wrapping call from <a href="./obj.m.html#velox.obj.register_object"><code>velox.obj.register_object</code></a>.</p>
+</li>
+</ul></div>
+<div class="source_cont">
+</div>
+</div>
+<div class="item">
+<div class="name def" id="velox.wrapper.SimpleKeras.cancel_scheduled_reload">
+<p>def <span class="ident">cancel_scheduled_reload</span>(</p><p>self)</p>
+</div>
+<div class="desc"><p>Cancels a scheduled reload background task started through a call to
+<a href="./obj.m.html#velox.obj.VeloxObject.reload"><code>velox.obj.VeloxObject.reload</code></a>.</p>
+<h2>Raises:</h2>
+<ul>
+<li><code>ValueError</code> if no jobs are available to cancel.</li>
+</ul></div>
+<div class="source_cont">
+</div>
+</div>
+<div class="item">
+<div class="name def" id="velox.wrapper.SimpleKeras.formatted_filename">
+<p>def <span class="ident">formatted_filename</span>(</p><p>self)</p>
+</div>
+<div class="desc"><p>Returns the formatted filename (without prefix) of the class, in the
+format <code>'{timestamp}_{name}.vx'</code>.</p></div>
+<div class="source_cont">
+</div>
+</div>
+<div class="item">
+<div class="name def" id="velox.wrapper.SimpleKeras.reload">
+<p>def <span class="ident">reload</span>(</p><p>self, prefix=None, specifier=None, scheduled=False, **interval_trigger_args)</p>
+</div>
+<div class="desc"><p>Defines the scheme by which to reload (hot swap) in-place. A scheduled
+reload can be canceled with a call to
+<a href="./obj.m.html#velox.obj.VeloxObject.cancel_scheduled_reload"><code>velox.obj.VeloxObject.cancel_scheduled_reload</code></a>.</p>
+<h2>Args:</h2>
+<ul>
+<li>
+<p><code>prefix (str)</code>: the prefix (can be on s3 or on a local filesystem) to
+    load a managed object from. If not passed will default to the
+    value of the <code>VELOX_ROOT</code> env var if set, else, will fall back to
+    the current working directory.</p>
+</li>
+<li>
+<p><code>specifier (str)</code>: any substrings in the timestamp (as generated by
+<a href="./tools.m.html#velox.tools.timestamp"><code>velox.tools.timestamp</code></a>) to explicitly search for.</p>
+</li>
+<li>
+<p><code>scheduled (bool)</code>: whether or not to run this as a scheduled and
+    seperate threaded process (<code>True</code>) or to simply to an in-place swap
+    (<code>False</code>). Only <code>scheduled=True</code> can guarantee zero-downtime.</p>
+</li>
+<li>
+<p><code>interval_trigger_args</code>: additional arguments to pass the the
+    <code>BackgroundScheduler</code> object. Most commonly, you can pass something
+    like <code>minutes=2</code> to schedule a poll to the prefix location every
+    two minutes.</p>
+</li>
+</ul>
+<h2>Raises:</h2>
+<ul>
+<li><code>ValueError</code> if you attempt to schedule a reload task when one is
+    already specified</li>
+</ul></div>
+<div class="source_cont">
+</div>
+</div>
+<div class="item">
+<div class="name def" id="velox.wrapper.SimpleKeras.save">
+<p>def <span class="ident">save</span>(</p><p>self, prefix=None)</p>
+</div>
+<div class="desc"><p>Saves the managed object instance using the user-defined method defined
+in <code>_save</code>.</p>
+<h2>Args:</h2>
+<ul>
+<li><code>prefix (str)</code>: the prefix (can be on s3 or on a local filesystem) to
+    save the managed object to. If not passed will default to the
+    value of the <code>VELOX_ROOT</code> env var if set, else, will fall back to
+    the current working directory.</li>
+</ul></div>
+<div class="source_cont">
+</div>
+</div>
+<div class="item">
+<div class="name def" id="velox.wrapper.SimpleKeras.savepath">
+<p>def <span class="ident">savepath</span>(</p><p>self, prefix=None)</p>
+</div>
+<div class="desc"><p>Stitches a prefix and a filename from
+<a href="./obj.m.html#velox.obj.VeloxObject.formatted_filename"><code>velox.obj.VeloxObject.formatted_filename</code></a> to form a path to save a model
+to.</p>
+<h2>Args:</h2>
+<ul>
+<li><code>prefix (str)</code>: the prefix (can be on s3 or on a local filesystem) to
+    save the managed object to. If not passed will default to the
+    value of the <code>VELOX_ROOT</code> env var if set, else, will fall back to
+    the current working directory.</li>
+</ul>
+<h2>Returns:</h2>
+<p>A full filename where a model can be saved to.</p></div>
+<div class="source_cont">
+</div>
+</div>
 <h3>Instance variables</h3>
 <div class="item">
 <p class="name" id="velox.wrapper.SimpleKeras.current_sha">var <span class="ident">current_sha</span></p>
@@ -1121,39 +1238,10 @@ decorator) of the class.</p></div>
 </div>
 <h3>Methods</h3>
 <div class="item">
-<div class="name def" id="velox.wrapper.SimpleKeras.__init__">
-<p>def <span class="ident">__init__</span>(</p><p>self, keras_model=None)</p>
-</div>
-<div class="source_cont">
-</div>
-</div>
-<div class="item">
-<div class="name def" id="velox.wrapper.SimpleKeras.cancel_scheduled_reload">
-<p>def <span class="ident">cancel_scheduled_reload</span>(</p><p>cls, *args, **kw)</p>
-</div>
-<div class="desc"><p>Cancels a scheduled reload background task started through a call to
-<a href="./obj.m.html#velox.obj.VeloxObject.reload"><code>velox.obj.VeloxObject.reload</code></a>.</p>
-<h2>Raises:</h2>
-<ul>
-<li><code>ValueError</code> if no jobs are available to cancel.</li>
-</ul></div>
-<div class="source_cont">
-</div>
-</div>
-<div class="item">
 <div class="name def" id="velox.wrapper.SimpleKeras.clear_registered_names">
 <p>def <span class="ident">clear_registered_names</span>(</p><p>cls)</p>
 </div>
 <div class="desc"><p>Unregisters all managed models.</p></div>
-<div class="source_cont">
-</div>
-</div>
-<div class="item">
-<div class="name def" id="velox.wrapper.SimpleKeras.formatted_filename">
-<p>def <span class="ident">formatted_filename</span>(</p><p>cls, *args, **kw)</p>
-</div>
-<div class="desc"><p>Returns the formatted filename (without prefix) of the class, in the
-format <code>'{timestamp}_{name}.vx'</code>.</p></div>
 <div class="source_cont">
 </div>
 </div>
@@ -1225,9 +1313,73 @@ constraints.</p>
 <div class="source_cont">
 </div>
 </div>
+</div>
+</div>
 <div class="item">
-<div class="name def" id="velox.wrapper.SimpleKeras.reload">
-<p>def <span class="ident">reload</span>(</p><p>cls, *args, **kw)</p>
+<p class="name" id="velox.wrapper.SimplePickle">class <span class="ident">SimplePickle</span></p>
+<div class="desc"><p>SimplePickle is a passthru wrapper for any pickle-able Python object,
+allowing you to save, load, and swap in a consistent manner.</p>
+<h2>Args:</h2>
+<ul>
+<li><code>managed_object (object)</code>: an pickleable object</li>
+</ul>
+<h2>Example:</h2>
+<div class="codehilite"><pre><span></span><span class="n">managed_object</span> <span class="o">=</span> <span class="n">SimplePickle</span><span class="p">({</span><span class="s1">'foo'</span><span class="p">:</span> <span class="s1">'bar'</span><span class="p">}})</span>
+
+<span class="k">print</span><span class="p">(</span><span class="n">managed_object</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">prefix</span><span class="o">=</span><span class="s1">'/path/to/saved/model'</span><span class="p">))</span>
+
+<span class="c1"># accesses underlying dictionary attribute.</span>
+<span class="n">managed_object</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'foo'</span><span class="p">)</span>
+</pre></div></div>
+<div class="source_cont">
+</div>
+<div class="class">
+<h3>Static methods</h3>
+<div class="item">
+<div class="name def" id="velox.wrapper.SimplePickle.__init__">
+<p>def <span class="ident">__init__</span>(</p><p>self, managed_object=None)</p>
+</div>
+<div class="desc"><p>Base constructor for managed objects.</p>
+<h2>Raises:</h2>
+<ul>
+<li>
+<p><a href="./exceptions.m.html#velox.exceptions.VeloxCreationError"><code>velox.exceptions.VeloxCreationError</code></a> if any type that inherits from
+    this class fails to invoke this method (i.e., doesn't call
+    <code>super(NewModelClass, self).__init__()</code>)</p>
+</li>
+<li>
+<p><a href="./exceptions.m.html#velox.exceptions.VeloxCreationError"><code>velox.exceptions.VeloxCreationError</code></a> if the class is defined without
+    a wrapping call from <a href="./obj.m.html#velox.obj.register_object"><code>velox.obj.register_object</code></a>.</p>
+</li>
+</ul></div>
+<div class="source_cont">
+</div>
+</div>
+<div class="item">
+<div class="name def" id="velox.wrapper.SimplePickle.cancel_scheduled_reload">
+<p>def <span class="ident">cancel_scheduled_reload</span>(</p><p>self)</p>
+</div>
+<div class="desc"><p>Cancels a scheduled reload background task started through a call to
+<a href="./obj.m.html#velox.obj.VeloxObject.reload"><code>velox.obj.VeloxObject.reload</code></a>.</p>
+<h2>Raises:</h2>
+<ul>
+<li><code>ValueError</code> if no jobs are available to cancel.</li>
+</ul></div>
+<div class="source_cont">
+</div>
+</div>
+<div class="item">
+<div class="name def" id="velox.wrapper.SimplePickle.formatted_filename">
+<p>def <span class="ident">formatted_filename</span>(</p><p>self)</p>
+</div>
+<div class="desc"><p>Returns the formatted filename (without prefix) of the class, in the
+format <code>'{timestamp}_{name}.vx'</code>.</p></div>
+<div class="source_cont">
+</div>
+</div>
+<div class="item">
+<div class="name def" id="velox.wrapper.SimplePickle.reload">
+<p>def <span class="ident">reload</span>(</p><p>self, prefix=None, specifier=None, scheduled=False, **interval_trigger_args)</p>
 </div>
 <div class="desc"><p>Defines the scheme by which to reload (hot swap) in-place. A scheduled
 reload can be canceled with a call to
@@ -1265,8 +1417,8 @@ reload can be canceled with a call to
 </div>
 </div>
 <div class="item">
-<div class="name def" id="velox.wrapper.SimpleKeras.save">
-<p>def <span class="ident">save</span>(</p><p>cls, *args, **kw)</p>
+<div class="name def" id="velox.wrapper.SimplePickle.save">
+<p>def <span class="ident">save</span>(</p><p>self, prefix=None)</p>
 </div>
 <div class="desc"><p>Saves the managed object instance using the user-defined method defined
 in <code>_save</code>.</p>
@@ -1281,8 +1433,8 @@ in <code>_save</code>.</p>
 </div>
 </div>
 <div class="item">
-<div class="name def" id="velox.wrapper.SimpleKeras.savepath">
-<p>def <span class="ident">savepath</span>(</p><p>cls, *args, **kw)</p>
+<div class="name def" id="velox.wrapper.SimplePickle.savepath">
+<p>def <span class="ident">savepath</span>(</p><p>self, prefix=None)</p>
 </div>
 <div class="desc"><p>Stitches a prefix and a filename from
 <a href="./obj.m.html#velox.obj.VeloxObject.formatted_filename"><code>velox.obj.VeloxObject.formatted_filename</code></a> to form a path to save a model
@@ -1299,27 +1451,6 @@ to.</p>
 <div class="source_cont">
 </div>
 </div>
-</div>
-</div>
-<div class="item">
-<p class="name" id="velox.wrapper.SimplePickle">class <span class="ident">SimplePickle</span></p>
-<div class="desc"><p>SimplePickle is a passthru wrapper for any pickle-able Python object,
-allowing you to save, load, and swap in a consistent manner.</p>
-<h2>Args:</h2>
-<ul>
-<li><code>managed_object (object)</code>: an pickleable object</li>
-</ul>
-<h2>Example:</h2>
-<div class="codehilite"><pre><span></span><span class="n">managed_object</span> <span class="o">=</span> <span class="n">SimplePickle</span><span class="p">({</span><span class="s1">'foo'</span><span class="p">:</span> <span class="s1">'bar'</span><span class="p">}})</span>
-
-<span class="k">print</span><span class="p">(</span><span class="n">managed_object</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">prefix</span><span class="o">=</span><span class="s1">'/path/to/saved/model'</span><span class="p">))</span>
-
-<span class="c1"># accesses underlying dictionary attribute.</span>
-<span class="n">managed_object</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'foo'</span><span class="p">)</span>
-</pre></div></div>
-<div class="source_cont">
-</div>
-<div class="class">
 <h3>Instance variables</h3>
 <div class="item">
 <p class="name" id="velox.wrapper.SimplePickle.current_sha">var <span class="ident">current_sha</span></p>
@@ -1337,39 +1468,10 @@ decorator) of the class.</p></div>
 </div>
 <h3>Methods</h3>
 <div class="item">
-<div class="name def" id="velox.wrapper.SimplePickle.__init__">
-<p>def <span class="ident">__init__</span>(</p><p>self, managed_object=None)</p>
-</div>
-<div class="source_cont">
-</div>
-</div>
-<div class="item">
-<div class="name def" id="velox.wrapper.SimplePickle.cancel_scheduled_reload">
-<p>def <span class="ident">cancel_scheduled_reload</span>(</p><p>cls, *args, **kw)</p>
-</div>
-<div class="desc"><p>Cancels a scheduled reload background task started through a call to
-<a href="./obj.m.html#velox.obj.VeloxObject.reload"><code>velox.obj.VeloxObject.reload</code></a>.</p>
-<h2>Raises:</h2>
-<ul>
-<li><code>ValueError</code> if no jobs are available to cancel.</li>
-</ul></div>
-<div class="source_cont">
-</div>
-</div>
-<div class="item">
 <div class="name def" id="velox.wrapper.SimplePickle.clear_registered_names">
 <p>def <span class="ident">clear_registered_names</span>(</p><p>cls)</p>
 </div>
 <div class="desc"><p>Unregisters all managed models.</p></div>
-<div class="source_cont">
-</div>
-</div>
-<div class="item">
-<div class="name def" id="velox.wrapper.SimplePickle.formatted_filename">
-<p>def <span class="ident">formatted_filename</span>(</p><p>cls, *args, **kw)</p>
-</div>
-<div class="desc"><p>Returns the formatted filename (without prefix) of the class, in the
-format <code>'{timestamp}_{name}.vx'</code>.</p></div>
 <div class="source_cont">
 </div>
 </div>
@@ -1438,80 +1540,6 @@ constraints.</p>
 <li><a href="./exceptions.m.html#velox.exceptions.VeloxConstraintError"><code>velox.exceptions.VeloxConstraintError</code></a> if no matching candidates
     are found from the specified prefix subject to specified constraints.</li>
 </ul></div>
-<div class="source_cont">
-</div>
-</div>
-<div class="item">
-<div class="name def" id="velox.wrapper.SimplePickle.reload">
-<p>def <span class="ident">reload</span>(</p><p>cls, *args, **kw)</p>
-</div>
-<div class="desc"><p>Defines the scheme by which to reload (hot swap) in-place. A scheduled
-reload can be canceled with a call to
-<a href="./obj.m.html#velox.obj.VeloxObject.cancel_scheduled_reload"><code>velox.obj.VeloxObject.cancel_scheduled_reload</code></a>.</p>
-<h2>Args:</h2>
-<ul>
-<li>
-<p><code>prefix (str)</code>: the prefix (can be on s3 or on a local filesystem) to
-    load a managed object from. If not passed will default to the
-    value of the <code>VELOX_ROOT</code> env var if set, else, will fall back to
-    the current working directory.</p>
-</li>
-<li>
-<p><code>specifier (str)</code>: any substrings in the timestamp (as generated by
-<a href="./tools.m.html#velox.tools.timestamp"><code>velox.tools.timestamp</code></a>) to explicitly search for.</p>
-</li>
-<li>
-<p><code>scheduled (bool)</code>: whether or not to run this as a scheduled and
-    seperate threaded process (<code>True</code>) or to simply to an in-place swap
-    (<code>False</code>). Only <code>scheduled=True</code> can guarantee zero-downtime.</p>
-</li>
-<li>
-<p><code>interval_trigger_args</code>: additional arguments to pass the the
-    <code>BackgroundScheduler</code> object. Most commonly, you can pass something
-    like <code>minutes=2</code> to schedule a poll to the prefix location every
-    two minutes.</p>
-</li>
-</ul>
-<h2>Raises:</h2>
-<ul>
-<li><code>ValueError</code> if you attempt to schedule a reload task when one is
-    already specified</li>
-</ul></div>
-<div class="source_cont">
-</div>
-</div>
-<div class="item">
-<div class="name def" id="velox.wrapper.SimplePickle.save">
-<p>def <span class="ident">save</span>(</p><p>cls, *args, **kw)</p>
-</div>
-<div class="desc"><p>Saves the managed object instance using the user-defined method defined
-in <code>_save</code>.</p>
-<h2>Args:</h2>
-<ul>
-<li><code>prefix (str)</code>: the prefix (can be on s3 or on a local filesystem) to
-    save the managed object to. If not passed will default to the
-    value of the <code>VELOX_ROOT</code> env var if set, else, will fall back to
-    the current working directory.</li>
-</ul></div>
-<div class="source_cont">
-</div>
-</div>
-<div class="item">
-<div class="name def" id="velox.wrapper.SimplePickle.savepath">
-<p>def <span class="ident">savepath</span>(</p><p>cls, *args, **kw)</p>
-</div>
-<div class="desc"><p>Stitches a prefix and a filename from
-<a href="./obj.m.html#velox.obj.VeloxObject.formatted_filename"><code>velox.obj.VeloxObject.formatted_filename</code></a> to form a path to save a model
-to.</p>
-<h2>Args:</h2>
-<ul>
-<li><code>prefix (str)</code>: the prefix (can be on s3 or on a local filesystem) to
-    save the managed object to. If not passed will default to the
-    value of the <code>VELOX_ROOT</code> env var if set, else, will fall back to
-    the current working directory.</li>
-</ul>
-<h2>Returns:</h2>
-<p>A full filename where a model can be saved to.</p></div>
 <div class="source_cont">
 </div>
 </div>
