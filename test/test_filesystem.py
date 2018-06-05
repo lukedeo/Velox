@@ -21,6 +21,9 @@ logging.basicConfig(level=logging.DEBUG)
 
 TEST_BUCKET = 'ci-velox-bucket'
 
+# TODO(lukedeo): Refactor the test suite to be more fixtured-out to make
+# sure we don't have duplicated code.
+
 
 @mock_s3
 def test_aware_filepath():
