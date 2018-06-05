@@ -34,10 +34,68 @@ For logging, simply grab the Velox logger by the `velox` handle.
 
 You can install Velox using `pip install velox`. For more detailed info, visit our [website](https://vaitech.io/Velox).
 
+## Basic Usage
+---
+
+For 90% of use cases, the `velox.lite` submodule provides a lightweight version of Velox's binary 
+management capabilities.
+
+The core functionality is geared towards continuous deployment environments in
+the machine learning world, where consistency and versioning of binary objects
+is key to maintain system integrity.
+
+Suppose we build a simple [`scikit-learn`](http://scikit-learn.org/) model that we want to be available somewhere else in a secure, verifyable manner. 
+
+Suppose a data scientist trains the following model.
+<!--begin_code-->
+    
+    #!python
+    import os
+
+    from sklearn.linear_model import SGDClassifier
+    from sklearn.datasets import make_blobs
+    from velox.lite import save_object
+
+    X, y = make_blobs()
+    
+    clf = SGDClassifier()
+    clf.fit(X, y)
+
+    save_object(
+        obj=clf, 
+        name='CustomerModel', 
+        prefix='s3://myprodbucket/ml/models', 
+        secret=os.environ.get('ML_MODELS_SECRET')
+    )
+<!--end_code-->
+
+Elsewhere, on a production server, we could easily load this model and
+verify it's integrity.
+
+<!--begin_code-->
+    
+    #!python
+    import os
+
+    from velox.lite import load_object
+    try:
+        clf = load_object(
+            name='CustomerModel', 
+            prefix='s3://myprodbucket/ml/models', 
+            secret=os.environ.get('ML_MODELS_SECRET')
+        )
+    except RuntimeError:
+        raise RuntimeError('Invalid Secret!')
+
+    # do things with clf...
+<!--end_code-->
+
+For more advanced and fine-grained nuanced versioning and constraint satisfaction, read the following section regarding the `velox.obj.VeloxObject`
+
 ## `VeloxObject` Abstract Base Class
 ---
 
-Functionality is exposed using the `VeloxObject` abstract base class (ABC). A subclass of a `velox.obj.VeloxObject` needs to implement three things in order for the library to know how to manage it.
+Functionality is exposed using the ``velox.obj.VeloxObject`` abstract base class (ABC). A subclass of a `velox.obj.VeloxObject` needs to implement three things in order for the library to know how to manage it.
 
 * Your class must be defined with a `velox.obj.register_object` decorator around it.
 * Your class must implement a `_save` object method that takes as input a file object and does whatever is needed to save the object.
@@ -48,6 +106,7 @@ This allows you to abstract away much of the messiness in bookkeeping.
 Here is a simple example showing all required components.
 
 <!--begin_code-->
+
     #!python
     import dill
     from sklearn.linear_model import SGDClassifier
@@ -84,6 +143,7 @@ Here is a simple example showing all required components.
 Here is a full example using [`gensim`](https://github.com/RaRe-Technologies/gensim) to build a topic model and keep track of all the necessary ETL-type objects that follow:
 
 <!--begin_code-->
+
     #!python
 
 
@@ -212,6 +272,7 @@ Elsewhere, (i.e., a production server, etc.) you can load the latest model like
 so:
 
 <!--begin_code-->
+
     #!python
     production_lda = LDAModel.load('s3://my-ci-bucket/models/foo')
     T = production_lda.transform(...)
@@ -223,6 +284,7 @@ memory, we can use a async reload thread to poll the `prefix` location for
 updated models!
 
 <!--begin_code-->
+
     #!python
 
     production_lda = LDAModel.load('s3://my-ci-bucket/models/foo')
@@ -254,5 +316,6 @@ from . import exceptions
 from . import tools
 from . import obj
 from . import wrapper
+from . import lite
 
-__all__ = ['filesystem', 'exceptions', 'tools', 'obj', 'wrapper']
+__all__ = ['filesystem', 'exceptions', 'tools', 'obj', 'wrapper', 'lite']

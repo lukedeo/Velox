@@ -1036,6 +1036,7 @@ table {
 <ul>
 <li class="mono"><a href="exceptions.m.html">velox.exceptions</a></li>
 <li class="mono"><a href="filesystem.m.html">velox.filesystem</a></li>
+<li class="mono"><a href="lite.m.html">velox.lite</a></li>
 <li class="mono"><a href="obj.m.html">velox.obj</a></li>
 <li class="mono"><a href="tools.m.html">velox.tools</a></li>
 <li class="mono"><a href="wrapper.m.html">velox.wrapper</a></li>
@@ -1065,11 +1066,59 @@ table {
 <p>To run the tests, you'll need the brilliant <code>moto</code> library, the <code>backports.tempfile</code> library for Python 2.7 compatibility, and <code>Keras</code> and <code>sckit-learn</code>.</p>
 <p>For logging, simply grab the Velox logger by the <code>velox</code> handle.</p>
 <p>You can install Velox using <code>pip install velox</code>. For more detailed info, visit our <a href="https://vaitech.io/Velox">website</a>.</p>
+<h2>Basic Usage</h2>
+<hr/>
+<p>For 90% of use cases, the <a href="lite.m.html"><code>velox.lite</code></a> submodule provides a lightweight version of Velox's binary 
+management capabilities.</p>
+<p>The core functionality is geared towards continuous deployment environments in
+the machine learning world, where consistency and versioning of binary objects
+is key to maintain system integrity.</p>
+<p>Suppose we build a simple <a href="http://scikit-learn.org/"><code>scikit-learn</code></a> model that we want to be available somewhere else in a secure, verifyable manner. </p>
+<p>Suppose a data scientist trains the following model.
+<!--begin_code--></p>
+<div class="codehilite"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">from</span> <span class="nn">sklearn.linear_model</span> <span class="kn">import</span> <span class="n">SGDClassifier</span>
+<span class="kn">from</span> <span class="nn">sklearn.datasets</span> <span class="kn">import</span> <span class="n">make_blobs</span>
+<span class="kn">from</span> <span class="nn">velox.lite</span> <span class="kn">import</span> <span class="n">save_object</span>
+
+<span class="n">X</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">make_blobs</span><span class="p">()</span>
+
+<span class="n">clf</span> <span class="o">=</span> <span class="n">SGDClassifier</span><span class="p">()</span>
+<span class="n">clf</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">X</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+
+<span class="n">save_object</span><span class="p">(</span>
+    <span class="n">obj</span><span class="o">=</span><span class="n">clf</span><span class="p">,</span> 
+    <span class="n">name</span><span class="o">=</span><span class="s1">'CustomerModel'</span><span class="p">,</span> 
+    <span class="n">prefix</span><span class="o">=</span><span class="s1">'s3://myprodbucket/ml/models'</span><span class="p">,</span> 
+    <span class="n">secret</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'ML_MODELS_SECRET'</span><span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+<!--end_code-->
+<p>Elsewhere, on a production server, we could easily load this model and
+verify it's integrity.</p>
+<!--begin_code-->
+<div class="codehilite"><pre><span></span><span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">from</span> <span class="nn">velox.lite</span> <span class="kn">import</span> <span class="n">load_object</span>
+<span class="k">try</span><span class="p">:</span>
+    <span class="n">clf</span> <span class="o">=</span> <span class="n">load_object</span><span class="p">(</span>
+        <span class="n">name</span><span class="o">=</span><span class="s1">'CustomerModel'</span><span class="p">,</span> 
+        <span class="n">prefix</span><span class="o">=</span><span class="s1">'s3://myprodbucket/ml/models'</span><span class="p">,</span> 
+        <span class="n">secret</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">'ML_MODELS_SECRET'</span><span class="p">)</span>
+    <span class="p">)</span>
+<span class="k">except</span> <span class="ne">RuntimeError</span><span class="p">:</span>
+    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">'Invalid Secret!'</span><span class="p">)</span>
+
+<span class="c1"># do things with clf...</span>
+</pre></div>
+<!--end_code-->
+<p>For more advanced and fine-grained nuanced versioning and constraint satisfaction, read the following section regarding the <a href="obj.m.html#velox.obj.VeloxObject"><code>velox.obj.VeloxObject</code></a></p>
 <h2><code>VeloxObject</code> Abstract Base Class</h2>
 <hr/>
-<p>Functionality is exposed using the <code>VeloxObject</code> abstract base class (ABC). A subclass of a <a href="obj.m.html#velox.obj.VeloxObject"><code>velox.obj.VeloxObject</code></a> needs to implement three things in order for the library to know how to manage it.</p>
+<p>Functionality is exposed using the <code>[</code>velox.obj.VeloxObject<code>](obj.m.html#velox.obj.VeloxObject)</code> abstract base class (ABC). A subclass of a <code>velox.obj.VeloxObject</code> needs to implement three things in order for the library to know how to manage it.</p>
 <ul>
-<li>Your class must be defined with a <a href="obj.m.html#velox.obj.register_object"><code>velox.obj.register_object</code></a> decorator around it.</li>
+<li>Your class must be defined with a <code>velox.obj.register_object</code> decorator around it.</li>
 <li>Your class must implement a <code>_save</code> object method that takes as input a file object and does whatever is needed to save the object.</li>
 <li>Your class must implement a <code>_load</code> class method (with the <code>@classmethod</code> decorator) that takes as input a file object and reconstructs and returns an instance of your class.</li>
 </ul>

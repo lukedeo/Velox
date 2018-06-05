@@ -30,9 +30,62 @@ For logging, simply grab the Velox logger by the `velox` handle.
 
 You can install Velox using `pip install velox`. For more detailed info, visit our [website](https://vaitech.io/Velox).
 
+## Basic Usage
+
+For 90% of use cases, the `velox.lite` submodule provides a lightweight version of Velox's binary 
+management capabilities.
+
+The core functionality is geared towards continuous deployment environments in
+the machine learning world, where consistency and versioning of binary objects
+is key to maintain system integrity.
+
+Suppose we build a simple [`scikit-learn`](http://scikit-learn.org/) model that we want to be available somewhere else in a secure, verifyable manner. 
+
+Suppose a data scientist trains the following model.
+```python
+import os
+
+from sklearn.linear_model import SGDClassifier
+from sklearn.datasets import make_blobs
+from velox.lite import save_object
+
+X, y = make_blobs()
+
+clf = SGDClassifier()
+clf.fit(X, y)
+
+save_object(
+    obj=clf, 
+    name='CustomerModel', 
+    prefix='s3://myprodbucket/ml/models', 
+    secret=os.environ.get('ML_MODELS_SECRET')
+)
+```
+
+Elsewhere, on a production server, we could easily load this model and
+verify it's integrity.
+
+```python
+import os
+
+from velox.lite import load_object
+try:
+    clf = load_object(
+        name='CustomerModel', 
+        prefix='s3://myprodbucket/ml/models', 
+        secret=os.environ.get('ML_MODELS_SECRET')
+    )
+except RuntimeError:
+    raise RuntimeError('Invalid Secret!')
+
+# do things with clf...
+```
+
+For more advanced and fine-grained nuanced versioning and constraint satisfaction, read the following section regarding the `velox.obj.VeloxObject`
+
 ## `VeloxObject` Abstract Base Class
 
-Functionality is exposed using the `VeloxObject` abstract base class (ABC). A subclass of a `velox.obj.VeloxObject` needs to implement three things in order for the library to know how to manage it.
+Functionality is exposed using the ``velox.obj.VeloxObject`` abstract base class (ABC). A subclass of a `velox.obj.VeloxObject` needs to implement three things in order for the library to know how to manage it.
 
 * Your class must be defined with a `velox.obj.register_object` decorator around it.
 * Your class must implement a `_save` object method that takes as input a file object and does whatever is needed to save the object.
@@ -69,7 +122,7 @@ class TextClf(VeloxObject):
 
     def predict(self, texts):
         return self._model.predict(texts)
-    
+
     def fit(self, texts, labels):
         return self._model.fit(texts, labels)
 ```
