@@ -28,7 +28,7 @@ setup(
         VERSION),
     license='Apache 2.0',
     install_requires=['apscheduler', 'semantic_version', 'dill',
-                      'six', 'futures;python_version=="2.7"',
+                      'six', 'itsdangerous', 'futures;python_version=="2.7"',
                       'future;python_version=="2.7"'],
     packages=find_packages(),
     keywords=('Machine-Learning TensorFlow Deployment Versioning Keras '
