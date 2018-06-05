@@ -14,7 +14,7 @@ Suppose we build a simple [`scikit-learn`](http://scikit-learn.org/) model that 
 
 Suppose a data scientist trains the following model.
 <!--begin_code-->
-    
+
     #!python
     import os
 
@@ -23,7 +23,7 @@ Suppose a data scientist trains the following model.
     from velox.lite import save_object
 
     X, y = make_blobs()
-    
+
     clf = SGDClassifier()
     clf.fit(X, y)
 
@@ -39,7 +39,7 @@ Elsewhere, on a production server, we could easily load this model and
 verify it's integrity.
 
 <!--begin_code-->
-    
+
     #!python
     import os
 
