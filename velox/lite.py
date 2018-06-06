@@ -61,6 +61,7 @@ import io
 import logging
 
 import itsdangerous
+from semantic_version import Version as SemVer, Spec as Specification
 
 from . import exceptions
 from . import filesystem
@@ -100,7 +101,18 @@ def _get_serialization_hook(obj):
     return serialization_hook, deserialization_class
 
 
-def save_object(obj, name, prefix, versioned=False, secret=None):
+def _seems_like_nonlite_velox_obj(prefix, name):
+    """
+    Check and see if the prefix / name combo could match a subclassed velox
+    object
+    """
+    specifier = '*_{}*.vx'.format(name)
+    if filesystem.find_matching_files(prefix, specifier):
+        return True
+    return False
+
+
+def save_object(obj, name, prefix, versioned=False, secret=None, bump='patch'):
     """
     Velox-managed method to save generic Python objects. Affords the ability
     to version saved objects to a common prefix, as well as to sign binaries
@@ -138,28 +150,57 @@ def save_object(obj, name, prefix, versioned=False, secret=None):
     * `secret (str)`: A secret (**guard like a password**) to require in 
         the deserialization process.
 
+    * `bump (str)`: One of `{major, minor, patch}`, indicates the semantic
+        version bump to save the `obj` with. Consult with the 
+        [semantic versioning website](https://semver.org/) for more information.
+
+    Returns:
+    --------
+
+    `filename`: the final filename that `obj` is saved into. 
+
 
     Raises:
     -------
 
-    * `ValueError` if the `name` argument is invalid.
-
     * `IOError` if attempting to save an unversioned file that already exists.
+
+    * `ValueError` if a semantic version string cannot be parsed.
     """
-    if not name.isalnum():
-        raise ValueError('name must be alphanumeric, got: {}'.format(name))
     serialization_hook, deserialization_class = _get_serialization_hook(obj)
 
     # Managed objects can either be versioned or unversioned - in the
     # versioned case, they will always have the name
-    # `/my/prefix/myservable-vN` where vN will range from 1 -> N. If not
+    # `/my/prefix/myservable-v0.2.3` where vX will be a semver string. If not
     # versioned, then will simply be `/my/prefix/myservable`
     if versioned:
         matching_files = filesystem.find_matching_files(
             prefix=prefix,
-            specifier='{}-*'.format(name)
+            specifier='{}-v*'.format(name)
         )
-        version = len(matching_files) + 1
+
+        # We first try to parse all the substrings defined by the last RHS of a
+        # block seperated by a `-v`.
+        try:
+            matched_versions = [SemVer(f.split('-v')[-1])
+                                for f in matching_files]
+        except ValueError as err:
+            raise ValueError('Error parsing semantic version string: {}'
+                             .format(err))
+
+        if matched_versions:
+            latest_version = max(matched_versions)
+            if bump == 'patch':
+                version = latest_version.next_patch()
+            elif bump == 'minor':
+                version = latest_version.next_minor()
+            elif bump == 'major':
+                version = latest_version.next_major()
+            else:
+                raise ValueError('invalid bump: {}'.format(bump))
+        else:
+            version = SemVer('0.1.0')
+
         logger.debug('assigning version v{}'.format(version))
         filename = filesystem.stitch_filename(prefix,
                                               '{}-v{}'.format(name, version))
@@ -187,12 +228,15 @@ def save_object(obj, name, prefix, versioned=False, secret=None):
     serializer = itsdangerous.Serializer(secret or DEFAULT_SECRET,
                                          serializer=dill)
     if secret:
-        logger.debug('specified secret={}'.format('*' * len(secret)))
+        logger.debug('specified SECRET=<{}>'.format('*' * len(secret)))
     with filesystem.get_aware_filepath(filename, 'wb') as fileobject:
         serializer.dump(data, fileobject)
 
+    return filename
 
-def load_object(name, prefix, versioned=False, secret=None):
+
+def load_object(name, prefix, versioned=False, version=None, secret=None,
+                return_sha=False):
     """
     Velox-managed method to load generic Python objects that have been saved
     via `velox.lite.save_object`. Affords the ability to load versioned
@@ -219,9 +263,20 @@ def load_object(name, prefix, versioned=False, secret=None):
     * `versioned (bool)`: Whether or not to load the object according to a 
         versioned scheme.
 
+    * `version (str)`: A specific object semantic version to search with, or a
+        semver compatible version specification (such as `<=1.0.2,>0.9.1`).
+
     * `secret (str)`: A secret (**guard like a password**) to verify 
         permissions in the deserialization process.
 
+    * `return_sha (bool)`: Whether or not to return the sha as part of the 
+        payload. If True, returns (obj, sha), else, just returns obj.
+
+    Returns:
+    --------
+
+    Returns the loaded object `obj` if `not return_sha`, else, will return a
+    tuple of `(obj, sha)`    
 
     Raises:
     -------
@@ -230,38 +285,69 @@ def load_object(name, prefix, versioned=False, secret=None):
         object from are found.
 
     * `velox.exceptions.RuntimeError` if `secret` does not match the secret
-        that was used to save the object.
+        that was used to save the object or if a pinned version load is 
+        attempted with an unversioned loading scheme.
     """
-    if not name.isalnum():
-        raise ValueError('name must be alphanumeric, got: {}'.format(name))
-    if versioned:
-        matching_files = filesystem.find_matching_files(
-            prefix=prefix,
-            specifier='{}-*'.format(name)
-        )
-        if not matching_files:
-            raise exceptions.VeloxConstraintError(
-                'No matching files at prefix: {} with name: {}. '
-                'Did you mean to load this binary with an unversioned scheme?'
-                .format(prefix, name)
+    if version and not versioned:
+        raise RuntimeError('Cannot perform a search against a specific '
+                           'version with unversioned loading scheme')
+    try:
+        if versioned:
+            matching_files = filesystem.find_matching_files(
+                prefix=prefix,
+                specifier='{}-v*'.format(name)
             )
-        logger.debug('found {} matching filenames'.format(len(matching_files)))
-        filename = filesystem.stitch_filename(prefix, matching_files[0])
-    else:
-        filename = filesystem.stitch_filename(prefix, name)
-        matching_files = filesystem.find_matching_files(
-            prefix=prefix,
-            specifier=name
-        )
-        if not matching_files:
-            raise exceptions.VeloxConstraintError(
-                'No matching files at prefix: {} with name: {}. '
-                'Did you mean to load this binary with a versioned scheme?'
-                .format(prefix, name)
+            if not matching_files:
+                raise exceptions.VeloxConstraintError(
+                    'No matching files at prefix: {} with name: {}. '
+                    'Did you mean to load this binary with '
+                    'an unversioned scheme?'
+                    .format(prefix, name)
+                )
+            matched_versions = [SemVer(f.split('-v')[-1])
+                                for f in matching_files]
+
+            if version:
+                best_version = Specification(version).select(matched_versions)
+                if not best_version:
+                    raise exceptions.VeloxConstraintError(
+                        'No matching files at prefix: {} with '
+                        'name: {} and version: {}. '
+                        .format(prefix, name, version)
+                    )
+            else:
+                best_version = max(matched_versions)
+            filename = filesystem.stitch_filename(prefix,
+                                                  '{}-v{}'
+                                                  .format(name, best_version))
+        else:
+            filename = filesystem.stitch_filename(prefix, name)
+            matching_files = filesystem.find_matching_files(
+                prefix=prefix,
+                specifier=name
             )
+            if not matching_files:
+                raise exceptions.VeloxConstraintError(
+                    'No matching files at prefix: {} with name: {}. '
+                    'Did you mean to load this binary with a versioned scheme?'
+                    .format(prefix, name)
+                )
+    # If someone is trying to use this method to load an object from a
+    # non-lite version of velox, let's catch that.
+    except exceptions.VeloxConstraintError as err:
+        if _seems_like_nonlite_velox_obj(prefix, name):
+            logger.info('Found a saved object that resembles a subclassed & '
+                        'managed object. Reverting to load_velox_object')
+            from .obj import load_velox_object
+            return load_velox_object(registered_name=name, prefix=prefix,
+                                     version_constraints=version)
+        raise err
+
     logger.debug('will load from filename: {}'.format(filename))
     serializer = itsdangerous.Serializer(secret or DEFAULT_SECRET,
                                          serializer=dill)
+
+    sha = None
     with filesystem.get_aware_filepath(filename, 'rb') as fileobject:
         try:
             data = serializer.load(fileobject)
@@ -269,7 +355,8 @@ def load_object(name, prefix, versioned=False, secret=None):
             raise RuntimeError(
                 'Mismatched secret - deserialization not authorized'
             )
+        sha = tools.sha(data['data'])
         deserialization_hook = _get_deserialization_hook(data['class'])
         obj = deserialization_hook(io.BytesIO(data['data']))
 
-    return obj
+    return (obj, sha) if return_sha else obj
