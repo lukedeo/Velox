@@ -13,7 +13,7 @@ from setuptools import find_packages
 
 from setuptools import setup, find_packages
 
-VERSION = '0.4.0'
+VERSION = '0.5.0'
 
 setup(
     name='Velox',
