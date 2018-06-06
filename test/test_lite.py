@@ -88,9 +88,38 @@ def test_load_versioned(name, prefix, secret):
     assert 'foo' == load_object(name, prefix, versioned=True, secret=secret)
 
 
+def test_load_versioned_pin_version(name, prefix, secret):
+    save_object(1, name, prefix, versioned=True, secret=secret)
+    save_object(2, name, prefix, versioned=True, secret=secret)
+    assert 1 == load_object(name, prefix, versioned=True,
+                            version='0.1.0', secret=secret)
+    assert 2 == load_object(name, prefix, versioned=True, secret=secret)
+
+
+def test_load_version_constraint(name, prefix, secret):
+    save_object(1, name, prefix, versioned=True, secret=secret)
+    save_object(2, name, prefix, versioned=True, secret=secret, bump='minor')
+    save_object(3, name, prefix, versioned=True, secret=secret, bump='major')
+    save_object(4, name, prefix, versioned=True, secret=secret, bump='major')
+
+    assert 1 == load_object(name, prefix, versioned=True,
+                            version='0.1.0', secret=secret)
+    assert 2 == load_object(name, prefix, versioned=True,
+                            version='>0.1.0,<1.0.0', secret=secret)
+    assert 3 == load_object(name, prefix, versioned=True,
+                            version='>=1.0.0,<2.0.0', secret=secret)
+    assert 4 == load_object(name, prefix, versioned=True, version='>0.1.0',
+                            secret=secret)
+
+
 def test_load_not_saved(name, prefix, versioned, secret):
     with pytest.raises(VeloxConstraintError):
         load_object(name, prefix, versioned=versioned, secret=secret)
+
+
+def test_load_versioned_error(name, prefix, secret):
+    with pytest.raises(RuntimeError):
+        load_object(name, prefix, versioned=False, version=True)
 
 
 def test_load_secret_mismatch(name, prefix, versioned, secret):
