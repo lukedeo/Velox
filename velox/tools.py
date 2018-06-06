@@ -10,7 +10,7 @@ package.
 from __future__ import unicode_literals
 
 import datetime
-from hashlib import md5
+from hashlib import sha1
 import six
 from threading import Thread
 import importlib
@@ -32,11 +32,13 @@ VELOX_NEW_FILE_EXTRAS_LENGTH = len(VELOX_NEW_FILE_FORMAT_STRING.format(''))
 
 def sha(s):
     """
-    get a simple, potentially value-inconsistent SHA of a python object.
+    get a simple, potentially value-inconsistent SHA1 of a python object.
     """
-    m = md5()
+    m = sha1()
     if isinstance(s, six.string_types):
         m.update(bytes(s, 'utf-8'))
+    elif isinstance(s, bytes):
+        m.update(s)
     else:
         m.update(s.__repr__())
     return m.hexdigest()
