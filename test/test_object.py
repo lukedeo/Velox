@@ -12,11 +12,10 @@ from velox import VeloxObject, register_object, load_velox_object
 from velox.exceptions import VeloxCreationError, VeloxConstraintError
 from velox.tools import timestamp
 
-
-def RESET():
-    VeloxObject.clear_registered_names()
+from velox_test_utils import create_class, RESET
 
 import logging
+
 logging.basicConfig(level=logging.DEBUG)
 
 
@@ -96,33 +95,6 @@ def test_load_save_self():
     assert o._o[1] == 2
 
     RESET()
-
-
-def create_class(name, version='0.1.0', constraints=None):
-    @register_object(
-        registered_name=name,
-        version=version,
-        version_constraints=constraints
-    )
-    class _Model(VeloxObject):
-
-        def __init__(self, o=None):
-            super(_Model, self).__init__()
-            self._o = o
-
-        def _save(self, fileobject):
-            pickle.dump(self._o, fileobject)
-
-        @classmethod
-        def _load(cls, fileobject):
-            r = cls()
-            setattr(r, '_o', pickle.load(fileobject))
-            return r
-
-        def obj(self):
-            return self._o
-
-    return _Model
 
 
 def test_correct_definition():
