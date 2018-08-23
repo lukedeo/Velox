@@ -3,14 +3,14 @@
 """
 ## `velox.lite`
 
-The `velox.lite` submodule provides a lightweight version of Velox's binary 
+The `velox.lite` submodule provides a lightweight version of Velox's binary
 management capabilities.
 
 The core functionality is geared towards continuous deployment environments in
 the machine learning world, where consistency and versioning of binary objects
 is key to maintain system integrity.
 
-Suppose we build a simple [`scikit-learn`](http://scikit-learn.org/) model that we want to be available somewhere else in a secure, verifyable manner. 
+Suppose we build a simple [`scikit-learn`](http://scikit-learn.org/) model that we want to be available somewhere else in a secure, verifyable manner.
 
 Suppose a data scientist trains the following model.
 <!--begin_code-->
@@ -28,9 +28,9 @@ Suppose a data scientist trains the following model.
     clf.fit(X, y)
 
     save_object(
-        obj=clf, 
-        name='CustomerModel', 
-        prefix='s3://myprodbucket/ml/models', 
+        obj=clf,
+        name='CustomerModel',
+        prefix='s3://myprodbucket/ml/models',
         secret=os.environ.get('ML_MODELS_SECRET')
     )
 <!--end_code-->
@@ -46,8 +46,8 @@ verify it's integrity.
     from velox.lite import load_object
     try:
         clf = load_object(
-            name='CustomerModel', 
-            prefix='s3://myprodbucket/ml/models', 
+            name='CustomerModel',
+            prefix='s3://myprodbucket/ml/models',
             secret=os.environ.get('ML_MODELS_SECRET')
         )
     except RuntimeError:
@@ -122,20 +122,20 @@ def save_object(obj, name, prefix, versioned=False, secret=None, bump='patch'):
         to save the object with the signature `obj._save(buf)` where buf is an
         object of type `io.BytesIO`.
 
-    * Else, will use the fantastic `dill` library to save the 
+    * Else, will use the fantastic `dill` library to save the
         object generically.
 
-    Saving / loading can proceed by two different standards - the first is a 
-    versioned saving / loading scheme, where objects are saved according 
-    to `/path/to/prefix/objectname-v1`, and the second is unversioned where 
-    objects are saved according to `/path/to/prefix/objectname`. Versions are 
+    Saving / loading can proceed by two different standards - the first is a
+    versioned saving / loading scheme, where objects are saved according
+    to `/path/to/prefix/objectname-v1`, and the second is unversioned where
+    objects are saved according to `/path/to/prefix/objectname`. Versions are
     automatically assigned - they autoincrement whenever a new object is pushed
     to the given prefix.
 
     Args:
     -----
 
-    * `obj (object)`: Object that is either pickle-able / dill-able or 
+    * `obj (object)`: Object that is either pickle-able / dill-able or
         defines a `_save(...)` method to serialize to a `io.BytesIO` object.
 
     * `name (str)`: The name to save the object under at the `prefix` location.
@@ -144,20 +144,20 @@ def save_object(obj, name, prefix, versioned=False, secret=None, bump='patch'):
         save the managed object to. If on S3, it is expected to take the form
         `s3://my-bucket/other/things/`.
 
-    * `versioned (bool)`: Whether or not to save the object according to a 
+    * `versioned (bool)`: Whether or not to save the object according to a
         versioned scheme.
 
-    * `secret (str)`: A secret (**guard like a password**) to require in 
+    * `secret (str)`: A secret (**guard like a password**) to require in
         the deserialization process.
 
     * `bump (str)`: One of `{major, minor, patch}`, indicates the semantic
-        version bump to save the `obj` with. Consult with the 
+        version bump to save the `obj` with. Consult with the
         [semantic versioning website](https://semver.org/) for more information.
 
     Returns:
     --------
 
-    `filename`: the final filename that `obj` is saved into. 
+    `filename`: the final filename that `obj` is saved into.
 
 
     Raises:
@@ -260,23 +260,23 @@ def load_object(name, prefix, versioned=False, version=None, secret=None,
         load the managed object from. If on S3, it is expected to take the form
         `s3://my-bucket/other/things/`.
 
-    * `versioned (bool)`: Whether or not to load the object according to a 
+    * `versioned (bool)`: Whether or not to load the object according to a
         versioned scheme.
 
     * `version (str)`: A specific object semantic version to search with, or a
         semver compatible version specification (such as `<=1.0.2,>0.9.1`).
 
-    * `secret (str)`: A secret (**guard like a password**) to verify 
+    * `secret (str)`: A secret (**guard like a password**) to verify
         permissions in the deserialization process.
 
-    * `return_sha (bool)`: Whether or not to return the sha as part of the 
+    * `return_sha (bool)`: Whether or not to return the sha as part of the
         payload. If True, returns (obj, sha), else, just returns obj.
 
     Returns:
     --------
 
     Returns the loaded object `obj` if `not return_sha`, else, will return a
-    tuple of `(obj, sha)`    
+    tuple of `(obj, sha)`
 
     Raises:
     -------
@@ -285,7 +285,7 @@ def load_object(name, prefix, versioned=False, version=None, secret=None,
         object from are found.
 
     * `velox.exceptions.RuntimeError` if `secret` does not match the secret
-        that was used to save the object or if a pinned version load is 
+        that was used to save the object or if a pinned version load is
         attempted with an unversioned loading scheme.
     """
     if version and not versioned:
@@ -339,8 +339,9 @@ def load_object(name, prefix, versioned=False, version=None, secret=None,
             logger.info('Found a saved object that resembles a subclassed & '
                         'managed object. Reverting to load_velox_object')
             from .obj import load_velox_object
-            return load_velox_object(registered_name=name, prefix=prefix,
-                                     version_constraints=version)
+            obj = load_velox_object(registered_name=name, prefix=prefix,
+                                    version_constraints=version)
+            return (obj, obj.current_sha) if return_sha else obj
         raise err
 
     logger.debug('will load from filename: {}'.format(filename))
