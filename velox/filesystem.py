@@ -3,7 +3,7 @@
 """
 ## `velox.filesystem`
 
-The `velox.filesystem` submodule provides support utilities related to 
+The `velox.filesystem` submodule provides support utilities related to
 managing files (and by extension, S3) to the Velox ecosystem.
 """
 
@@ -31,7 +31,7 @@ def _is_non_zero_file(filepath):
 
 def find_matching_files(prefix, specifier):
     """
-    Searches for files matching the `specifier` at the `prefix` location 
+    Searches for files matching the `specifier` at the `prefix` location
     (which can be on S3).
     """
     if not is_s3_path(prefix):
@@ -79,8 +79,8 @@ def stitch_filename(prefix, filename):
 def ensure_exists(prefix):
     """
     Safely ensures that the specified `prefix` exists. If `prefix` would point
-    to a location on a reachable file system, it will safely create the 
-    necessary directory path respecting race conditions. If `prefix` would 
+    to a location on a reachable file system, it will safely create the
+    necessary directory path respecting race conditions. If `prefix` would
     point to S3, it creates the bucket, if one doesn't already exist.
     """
 
@@ -115,7 +115,7 @@ def ensure_exists(prefix):
 
 def safe_mkdir(path):
     """
-    Safe mkdir (i.e., don't create if already exists, 
+    Safe mkdir (i.e., don't create if already exists,
     and no violation of race conditions).
     """
     try:
@@ -163,19 +163,19 @@ def get_aware_filepath(path, mode='r', session=None, yield_type_hint=False,
 
     Args:
     -----
-    * `path (str)`: path to object you wish to write. Can be 
-            either `/path/to/desired/file.fmt`, or 
+    * `path (str)`: path to object you wish to write. Can be
+            either `/path/to/desired/file.fmt`, or
             `s3://myBucketName/this/is/a.key`
 
     * `mode (str)`: one of {rb, wb, r, w}
 
-    * `session (None | boto3.Session)`: can pass in a custom boto3 session 
+    * `session (None | boto3.Session)`: can pass in a custom boto3 session
         if need be
 
-    * `yield_type_hint (bool)`: Whether or not to yield any type hints from the 
+    * `yield_type_hint (bool)`: Whether or not to yield any type hints from the
         velox metadata. If `True`, then will yield a tuple.
 
-    * `delete_on_close (bool)`: Whether or not to delete any temporary files 
+    * `delete_on_close (bool)`: Whether or not to delete any temporary files
         (only used if `path` is an S3 path.)
 
     Example:

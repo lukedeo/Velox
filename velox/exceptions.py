@@ -3,7 +3,7 @@
 """
 ## `velox.exceptions`
 
-The `velox.exceptions` submodule defines all the exceptions that are specific 
+The `velox.exceptions` submodule defines all the exceptions that are specific
 to the Velox ecosystem.
 """
 

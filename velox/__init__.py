@@ -37,14 +37,14 @@ You can install Velox using `pip install velox`. For more detailed info, visit o
 ## Basic Usage
 ---
 
-For 90% of use cases, the `velox.lite` submodule provides a lightweight version of Velox's binary 
+For 90% of use cases, the `velox.lite` submodule provides a lightweight version of Velox's binary
 management capabilities.
 
 The core functionality is geared towards continuous deployment environments in
 the machine learning world, where consistency and versioning of binary objects
 is key to maintain system integrity.
 
-Suppose we build a simple [`scikit-learn`](http://scikit-learn.org/) model that we want to be available somewhere else in a secure, verifyable manner. 
+Suppose we build a simple [`scikit-learn`](http://scikit-learn.org/) model that we want to be available somewhere else in a secure, verifyable manner.
 
 Suppose a data scientist trains the following model.
 <!--begin_code-->
@@ -62,9 +62,9 @@ Suppose a data scientist trains the following model.
     clf.fit(X, y)
 
     save_object(
-        obj=clf, 
-        name='CustomerModel', 
-        prefix='s3://myprodbucket/ml/models', 
+        obj=clf,
+        name='CustomerModel',
+        prefix='s3://myprodbucket/ml/models',
         secret=os.environ.get('ML_MODELS_SECRET')
     )
 <!--end_code-->
@@ -80,8 +80,8 @@ verify it's integrity.
     from velox.lite import load_object
     try:
         clf = load_object(
-            name='CustomerModel', 
-            prefix='s3://myprodbucket/ml/models', 
+            name='CustomerModel',
+            prefix='s3://myprodbucket/ml/models',
             secret=os.environ.get('ML_MODELS_SECRET')
         )
     except RuntimeError:
@@ -252,7 +252,7 @@ Here is a full example using [`gensim`](https://github.com/RaRe-Technologies/gen
 
 <!--end_code-->
 
-Voilà! Now, let's say you have a list of strings, and you wanted to train this 
+Voilà! Now, let's say you have a list of strings, and you wanted to train this
 model:
 
 <!--begin_code-->
@@ -278,8 +278,8 @@ so:
     T = production_lda.transform(...)
 <!--end_code-->
 
-In many environments, we would like the model to get hotswapped when a new model 
-is uploaded to `s3`. Velox makes this easy! As long as the model stays in 
+In many environments, we would like the model to get hotswapped when a new model
+is uploaded to `s3`. Velox makes this easy! As long as the model stays in
 memory, we can use a async reload thread to poll the `prefix` location for
 updated models!
 
@@ -289,8 +289,8 @@ updated models!
 
     production_lda = LDAModel.load('s3://my-ci-bucket/models/foo')
     production_lda.reload(
-        prefix='s3://my-ci-bucket/models/foo', 
-        scheduled=True, 
+        prefix='s3://my-ci-bucket/models/foo',
+        scheduled=True,
         minutes=5
     )
 

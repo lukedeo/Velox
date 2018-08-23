@@ -3,7 +3,7 @@
 """
 ## `velox.tools`
 
-The `velox.tools` submodule provides general support utilities to the Velox 
+The `velox.tools` submodule provides general support utilities to the Velox
 package.
 """
 
@@ -45,15 +45,15 @@ def sha(s):
 
 
 def timestamp():
-    """ 
-    Returns a string of the form YYYYMMDDHHmmSSCCCCCC, where 
+    """
+    Returns a string of the form YYYYMMDDHHmmSSCCCCCC, where
 
     * `YYYY` is the current year
     * `MM` is the current month, with zero padding to the left
     * `DD` is the current day, zero padded on the left
     * `HH`is the current hour, zero padded on the left
     * `mm`is the current minute, zero padded on the left
-    * `CCCCCC`is the current microsecond as a decimal number, 
+    * `CCCCCC`is the current microsecond as a decimal number,
         zero padded on the left
     """
     return datetime.datetime.utcnow().strftime('%Y%m%d%H%M%S%f')
@@ -155,7 +155,7 @@ def get_file_meta(filehandle, truncate=False):
 
 def threaded(fn):
     """
-    A simple decorator that allows a function to be called with its return 
+    A simple decorator that allows a function to be called with its return
     value given as a `Future` object.
 
     Example:
