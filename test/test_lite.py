@@ -2,6 +2,7 @@ import pytest
 import dill
 import os
 from backports.tempfile import TemporaryDirectory
+from velox.obj import VeloxObject, register_object
 from velox.lite import save_object, load_object
 from velox.exceptions import VeloxConstraintError
 
@@ -68,6 +69,26 @@ def name():
     return 'OBJECTNAME'
 
 
+@register_object(registered_name=name())
+class FullVeloxObj(VeloxObject):
+
+    def __init__(self, o=None):
+        super(FullVeloxObj, self).__init__()
+        self._o = o
+
+    def _save(self, fileobject):
+        dill.dump(self._o, fileobject)
+
+    @classmethod
+    def _load(cls, fileobject):
+        r = cls()
+        setattr(r, '_o', dill.load(fileobject))
+        return r
+
+    def obj(self):
+        return self._o
+
+
 def test_save_load(name, prefix, obj_instance, versioned, secret):
     save_object(obj_instance, name, prefix, versioned=versioned, secret=secret)
     _ = load_object(name, prefix, versioned=versioned, secret=secret)
@@ -110,6 +131,19 @@ def test_load_version_constraint(name, prefix, secret):
                             version='>=1.0.0,<2.0.0', secret=secret)
     assert 4 == load_object(name, prefix, versioned=True, version='>0.1.0',
                             secret=secret)
+
+
+def test_load_full_velox_with_sha(name, prefix):
+    try:
+        instance = FullVeloxObj({'a': 'bam'})
+        instance.save(prefix)
+
+        result = load_object(name, prefix, versioned=True, return_sha=True)
+
+        assert isinstance(result, tuple)
+        assert len(result) == 2
+    finally:
+        velox_test_utils.RESET()
 
 
 def test_load_not_saved(name, prefix, versioned, secret):
