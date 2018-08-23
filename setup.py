@@ -21,6 +21,7 @@ setup(
     description=('Batteries-included tooling for handling promotion, '
                  'versioning, and zero-downtime requirments of Machine '
                  'Learning models in production.'),
+    long_description=open('README.md').read(),
     author='Luke de Oliveira',
     author_email='lukedeo@vaitech.io',
     url='https://github.com/vaitech/Velox',
