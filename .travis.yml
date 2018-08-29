@@ -12,17 +12,19 @@ matrix:
           env: MODE=pep8
 before_install:
   - sudo apt-get update
-  # apparently, Trusty from GCP sticks some gunk inside here to smooth out 
-  # stuff with GCP & boto. This is a bit useless in CI. See this issue for 
+  # apparently, Trusty from GCP sticks some gunk inside here to smooth out
+  # stuff with GCP & boto. This is a bit useless in CI. See this issue for
   # more details: https://github.com/travis-ci/travis-ci/issues/7940
   - sudo rm -f /etc/boto.cfg
 install:
-  - mkdir ~/.aws && printf "[default]\noutput = json\nregion = us-west-2" > ~/.aws/config
+  - mkdir ~/.aws
+  - printf "[default]\noutput = json\nregion = us-west-2" > ~/.aws/config
+  - printf "[default]\naws_access_key_id = FakeKey\naws_secret_access_key = FakeKey\naws_session_token = FakeKey" > ~/.aws/credentials
   - export BASE_DIR=$(pwd)
   - echo $(python --version)
   - pip install -e .[aws,tests]
   - cd $BASE_DIR
-  
+
 # command to run tests
 script:
   - if [[ "$MODE" == "pep8" ]]; then
