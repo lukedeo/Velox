@@ -22,7 +22,7 @@ install:
   - printf "[default]\naws_access_key_id = FakeKey\naws_secret_access_key = FakeKey\naws_session_token = FakeKey" > ~/.aws/credentials
   - export BASE_DIR=$(pwd)
   - echo $(python --version)
-  - pip install -e .[aws,tests]
+  - pip install -e .[tests]
   - cd $BASE_DIR
 
 # command to run tests
